@@ -50,6 +50,7 @@
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/plugins \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/ratchet.css \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/styles.css \
+/Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/tool.js \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/css/index.css \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/img/logo.png \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/js/index.js \
