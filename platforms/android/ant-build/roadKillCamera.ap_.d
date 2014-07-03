@@ -54,6 +54,9 @@
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/css/index.css \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/img/logo.png \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/js/index.js \
+/Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/js/jquery-1.11.1.min.js \
+/Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/js/jquery.cookie.js \
+/Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/js/tool.js \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/plugins/org.apache.cordova.camera \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/plugins/org.apache.cordova.inappbrowser \
 /Applications/MAMP/htdocs/roadKillCamera/platforms/android/assets/www/plugins/org.apache.cordova.camera/www \
