@@ -15,6 +15,9 @@ Android/bin/
 Android/gen/
 Android/assets/
 
+# generated files - phonegap project subfolder
+platforms/*
+
 # generated files
 bin/
 gen/
