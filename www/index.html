@@ -25,6 +25,9 @@
 <button id="drupalBtn" class="btn btn-block" onclick="loginDrupal()">Login to drupal</button>
 <hr/>
 
+<button id="drupalPostBtn" class="btn btn-block" onclick="postDrupal()">Post to drupal</button>
+<hr/>
+
 <button class="btn btn-block" onclick="capturePhoto();">Capture Photo</button> <br>
 <!-- <button onclick="capturePhotoEdit();">Capture Editable Photo</button> <br> -->
 <button class="btn btn-block" onclick="getPhoto(pictureSource.PHOTOLIBRARY);">From Photo Library</button><br>
@@ -131,7 +134,7 @@
         loginToDrupal({"hello":"pica"}, function(result){
             if(result === "success"){
                 alert(result);
-                // triggerDrupalBtn(true);
+                triggerDrupalBtn(true);
             }
         });
     }
@@ -139,6 +142,11 @@
         logoutToDrupal(function(result){
             console.log(result);
             triggerDrupalBtn(false);
+        });
+    }
+    function postDrupal(){
+        postToDrupal(function(result){
+            console.log(result);
         });
     }
     function onPhotoDataSuccess(imageData) {
