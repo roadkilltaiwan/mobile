@@ -25,6 +25,7 @@ function loginToDrupal(req, callback){
             localStorage.setItem("sessName", result.session_name);
             localStorage.setItem("sessId", result.sessid);
             localStorage.setItem("token", result.token);
+            localStorage.setItem("uid", result.user.uid);
             $.cookie(result.session_name, result.sessid);
 
             console.log(localStorage.getItem("sessName"));
@@ -51,6 +52,7 @@ function logoutToDrupal(callback){
             localStorage.removeItem("sessName");
             localStorage.removeItem("sessId");
             localStorage.removeItem("token");
+            localStorage.removeItem("uid");
             callback("success");
         },
         error:function(err){
@@ -60,24 +62,61 @@ function logoutToDrupal(callback){
 }
 
 function postToDrupal(callback) {
-    if(localStorage.getItem("sessName")) {
-        $.ajax({
-            url: "http://roadkill.tw/testbed/drupalgap/node",
-            type: 'POST',
-            dataType: 'json',
-            data: {"nid":"","title":"test","type":"article","language":"und","body":{"und":[{"value":"AJAX auto post!"}]},"field_image":{"und":[{"value":""}]},"field_placename":{"und":[{"value":""}]},"field_taxon_name":{"und":[{"value":""}]},"field_license_text":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":"43.465187","lon":"-80.522372"}}]}},
-            beforeSend: function (xhr){
-                xhr.setRequestHeader('X-CSRF-Token',
-                                    localStorage.getItem("token"));
-            },
-            success: function(result){
-                callback("success");
-            },
-            error: function(err){
-                console.log(err);
-            }
-        });
-    } else {
+    // exception handling to be improved
+    if(localStorage.getItem("sessName") === null) {
         callback("Please log in first.");
+        return;
     }
+    var img = document.getElementById("smallImage");
+    if(img.src.search('data')<0) {
+        callback("No image.");
+        return;
+    }
+
+    // upload image first
+    $.ajax({
+        url: "http://roadkill.tw/testbed/drupalgap/file",
+        type: "POST",
+        dataType: "json",
+        data: {
+            "file": {
+                "file": img.src.replace("data:image/jpeg;base64,", ""),
+                "filename": "image.jpg",
+                "uid": localStorage.getItem("uid")
+            }
+        },
+        beforeSend: function (xhr){
+            xhr.setRequestHeader('X-CSRF-Token',
+                                localStorage.getItem("token"));
+            xhr.setRequestHeader('Content-type',
+                                'application/x-www-form-urlencoded');
+        },
+        success: function(result) {
+            formToFieldHandler(result, callback);
+        },
+        error: function(err){
+            console.log(err);
+        }
+    });
+}
+
+function formToFieldHandler(result, callback){
+    var fid = result.fid;
+    // post article
+    $.ajax({
+        url: "http://roadkill.tw/testbed/drupalgap/node",
+        type: 'POST',
+        dataType: 'json',
+        data: {"nid":"","title":"test","type":"article","language":"und","body":{"und":[{"value":"AJAX auto post!"}]},"field_image":{"und":[{"fid":fid}]},"field_placename":{"und":[{"value":""}]},"field_taxon_name":{"und":[{"value":""}]},"field_license_text":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":"43.465187","lon":"-80.522372"}}]}},
+        beforeSend: function (xhr){
+            xhr.setRequestHeader('X-CSRF-Token',
+                                localStorage.getItem("token"));
+        },
+        success: function(result){
+            callback("success");
+        },
+        error: function(err){
+            console.log(err);
+        }
+    });
 }

@@ -129,6 +129,7 @@
     function onDeviceReady() {
         pictureSource=navigator.camera.PictureSourceType;
         destinationType=navigator.camera.DestinationType;
+        triggerDrupalBtn(localStorage.getItem("token"));
     }
     function loginDrupal(){
         loginToDrupal({"hello":"pica"}, function(result){
@@ -140,13 +141,13 @@
     }
     function logoutDrupal(){
         logoutToDrupal(function(result){
-            console.log(result);
+            alert(result);
             triggerDrupalBtn(false);
         });
     }
     function postDrupal(){
         postToDrupal(function(result){
-            console.log(result);
+            alert(result);
         });
     }
     function onPhotoDataSuccess(imageData) {
@@ -207,8 +208,9 @@
     //
     function getPhoto(source) {
       // Retrieve image file location from specified source
-      navigator.camera.getPicture(onPhotoURISuccess, onFail, { quality: 50,
-        destinationType: destinationType.FILE_URI,
+      navigator.camera.getPicture(onPhotoDataSuccess/*onPhotoURISuccess*/, onFail, { quality: 50,
+        //destinationType: destinationType.FILE_URI,
+        destinationType: destinationType.DATA_URL,
         sourceType: source });
     }
 
