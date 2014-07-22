@@ -1,11 +1,11 @@
-
+"use strict";
 function loginToDrupal(req, callback){
     console.log(req);
-    if(localStorage.getItem("sessName")){
+    /*if(localStorage.getItem("sessName")){
         console.log(localStorage.getItem("sessName"));
         callback("success");
         return;
-    }
+    }*/
 
 
     // var dataUse = {username:'root', password:'drupalej03xu35k3'};
