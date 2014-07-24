@@ -28,6 +28,15 @@
 <body>
 
 <div id="home" data-role="page">
+    <div data-role="header" class="ui-header" data-theme="b">
+        <div role="navigation" class="ui-navbar" data-role="navbar">
+            <ul class="ui-grid-b">
+                <li class="ui-block-a"><a class="ui-link ui-btn ui-icon-grid ui-btn-icon-top" href="#" data-icon="grid">檢視</a></li>
+                <li class="ui-block-b"><a class="ui-link ui-btn ui-icon-star ui-btn-icon-top" href="#" data-transition="slide" data-icon="star">回報</a></li>
+                <li class="ui-block-c"><a class="ui-link ui-btn ui-icon-gear ui-btn-icon-top" href="#panelSetting" data-transition="slide" data-icon="gear">設定</a></li>
+            </ul>
+        </div>
+    </div>
     <div data-role="main" class="ui-content" data-theme="a">
         <ul data-role="listview" data-split-theme="a" data-inset="true" >
             <li id="eventRow" data-icon="edit">
@@ -52,15 +61,38 @@
             <a id="btnUpload" href="#" class="ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-shadow rounded-corner pastel-blue" style="padding: 20px 50px 20px 50px; margin: 0 -64px;">上傳</a>
         </div>
     </div>
+
+    <!-- popups -->
     
+    <div id="panelSetting" class="ui-panel ui-panel-position-right ui-panel-display-overlay ui-body-a ui-panel-animate ui-panel-closed" data-role="panel" data-position="right" data-display="overlay" data-dismissible="true" data-theme="a">
+        <label for="select-cc" class="select">我的內容授權為…</label>
+        <select name="select-cc" id="select-cc">
+            <option value="0">版權所有</option>
+            <option value="1">無版權</option>
+            <option value="2">CC0</option>
+            <option value="3" selected>BY (姓名標示)</option>
+            <option value="4">BY-NC (姓名標示─非商業性)</option>
+            <option value="5">BY-NC-SA (姓名標示─非商業性─相同方式分享)</option>
+            <option value="6">BY-ND (姓名標示─禁止改作)</option>
+            <option value="7">BY-NC-ND (姓名標示─非商業性─禁止改作)</option>
+            <option value="8">BY-SA (姓名標示─相同方式分享)</option>
+        </select>
+        <label for="select-fbId" class="select">在路殺社臉書社團…</label>
+        <select name="select-fbId" id="select-fbId">
+            <option value="0">具名發佈</option>
+            <option value="1">公用帳號發佈</option>
+            <option value="2">不公開發佈</option>
+        </select>
+    </div><!-- /panel -->
+
     <!-- popups -->
     
     <div id="editPopup" data-role="popup" data-theme="a" data-overlay-theme="b" class="ui-content" style="max-width:340px; padding: 35px;">
         <p style="text-align: center" >對這個事件，你要...</p>
-            <ul data-role="listview" data-inset="true">
-                <li><a id="btnRetakePhoto" href="#">重拍一張照片</a></li>
-                <li><a id="btnUpdateLocation" href="#">標記日期與地點</a></li>
-            </ul>
+        <ul data-role="listview" data-inset="true">
+            <li><a id="btnRetakePhoto" href="#">重拍一張照片</a></li>
+            <li><a id="btnUpdateLocation" href="#">標記日期與地點</a></li>
+        </ul>
     </div>
     <div id="imgPopup" data-role="popup" data-theme="a" data-overlay-theme="b" class="ui-content" style="max-width:340px; padding: 35px;">
             <ul data-role="listview" data-inset="true">

@@ -1,7 +1,7 @@
 var LOCATION_SERVICE_TIMEOUT = 10000;
 var HTTP_REQUEST_TIMEOUT = 10000;
 var GOOGLE_MAPS_API_URL = "http://maps.googleapis.com/maps/api/geocode/json?language=zh-TW&sensor=true&latlng=";
-var CAMERA_IMAGE = "/assets/camera.png";
+var CAMERA_IMAGE = "./assets/img/camera.png";
 var DEFAULT_MAP_CENTER = {lat: 23.97565, lng: 120.973882};
 var LOCATION_ERROR_MESSAGE = "無法定位";
 var LOCATION_SERVICE_INTERRUPTED = "請手動標記位置";
@@ -117,6 +117,7 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
     this.descElement = this.rowElement.find(".photoDesc");
     this.locationElement = this.rowElement.find(".location");
+    this.licenseSelect = $("#select-cc");
     this.btnEdit = this.rowElement.find(".btnEdit");
     this.btnEdit.on("click", $.proxy(this.btnEditPressed, this));
     this.rowNumber = rowNumber;
@@ -172,8 +173,8 @@ RkEventRow.prototype.deletePhoto = function() {
         "-webkit-transform": "",
         "transform:rotate": ""
     });
-    this.photoPicker.val("");
-    this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
+    //this.photoPicker.val("");
+    //this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
 };
 
 RkEventRow.prototype.clear = function() {
@@ -369,6 +370,7 @@ function RkEvent() {
     this.shortAddress = null;
     this.speciesCh = null;
     this.speciesLat = null;
+    this.license = null;
 }
 
 RkEvent.prototype.clear = function() {
@@ -380,6 +382,7 @@ RkEvent.prototype.clear = function() {
     this.shortAddress = null;
     this.speciesCh = null;
     this.speciesLat = null;
+    this.license = null;
 };
 
 function RkReport() {
@@ -759,8 +762,26 @@ function upload(events, done, fail) {
                                 'application/x-www-form-urlencoded');
         },
         success: function(result) {
-            done();
+            //done();
             //formToFieldHandler(result, callback);
+            $.ajax({
+                url: "http://roadkill.tw/testbed/drupalgap/node",
+                type: 'POST',
+                dataType: 'json',
+                data: {"nid":"","title":'['+events[0].shortAddress+'] '+Date(events[0].time),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
+                beforeSend: function (xhr){
+                    xhr.setRequestHeader('X-CSRF-Token',
+                                        localStorage.getItem("token"));
+                },
+                success: function(result){
+                    done();
+                },
+                error: function(err){
+                    fail();
+                    alert(err);
+                }
+            });
+
         },
         error: function(err){
             fail();
@@ -788,6 +809,8 @@ function prepareReport(report) {
             var desc = eventRow.descElement.val();
             event.desc = desc;
             //event.photoFile = file.substr(file.indexOf(";base64,")+8);
+            var license = eventRow.licenseSelect.find("option:selected").val();
+            event.license = license;
         }
     }
     return null;
