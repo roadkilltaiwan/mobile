@@ -112,9 +112,9 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.event = rkevent;
     this.photoElement = this.rowElement.find(".photo");
     this.photoElement.on("click", $.proxy(this.photoPressed, this));
-    //this.photoElement.on("load", $.proxy(this.photoLoaded, this));
+    this.photoElement.on("load", $.proxy(this.photoLoaded, this));
     this.photoPicker = this.rowElement.find(".photoPicker");
-    this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
+    //this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
     this.descElement = this.rowElement.find(".photoDesc");
     this.locationElement = this.rowElement.find(".location");
     this.licenseSelect = $("#select-cc");
@@ -169,6 +169,7 @@ RkEventRow.prototype.handleLocationError = function(error) {
 
 RkEventRow.prototype.deletePhoto = function() {
     this.photoElement.attr("src", CAMERA_IMAGE);
+    this.photoElement.removeProp("exifdata");
     this.photoElement.css({
         "-webkit-transform": "",
         "transform:rotate": ""
@@ -192,9 +193,9 @@ RkEventRow.prototype.retakePhoto = function() {
     this.takePicture();
 };
 
-RkEventRow.prototype.displayPhoto = function(imgData/*file*/, rotation) {
+RkEventRow.prototype.displayPhoto = function(imgURI/*file*/, rotation) {
     //var baseurl = window.URL ? window.URL : window.webkitURL;
-    var imgSrc = "data:image/jpeg;base64,"+imgData;//baseurl.createObjectURL(file);
+    var imgSrc = imgURI;//baseurl.createObjectURL(file);
     this.photoElement.attr("src", imgSrc);
     
     var transform = "rotate(" + rotation + "deg)";
@@ -202,7 +203,7 @@ RkEventRow.prototype.displayPhoto = function(imgData/*file*/, rotation) {
         "-webkit-transform": transform,
         "transform:rotate": transform,
     });
-    hidePageBusy();
+    //hidePageBusy();
 };
 
 /*
@@ -235,28 +236,21 @@ RkEventRow.prototype.photoPickerChanged = function(event) {
 */
 
 
-RkEventRow.prototype.photoPickerChanged = function(/*event*/imgData) {
-    /*if(event.target.files.length==0) {
+//RkEventRow.prototype.photoPickerChanged = function(/*event*/imgData) {
+RkEventRow.prototype.photoLoaded = function() {
+    if(!this.hasImage) {
         return;
-    }*/
-    imgPopup.popup("close");
-    
-    showPageBusy(PROCESSING);
-    var photoRow = this;
-    var originalPhotoElement = this.photoElement;
-    //var file = event.target.files[0];
-    this.hasImage = true;
+    }
+    var img = this.photoElement.get(0);
+    this.event.photoFile = img;
     this.event.time = new Date().getTime();
-    this.event.photoFile = imgData;//file;
-    /*loadImage.parseMetaData(file, $.proxy(function(data) {
-    $(this.photoElement).load(function(e) {
+    EXIF.getData(img, $.proxy(function() {
         var foundLocationInPhoto = false;
-        if(this.src) alert("this is an img.");
-        if (data.exif) {
+        if (img.exifdata) {
             var exifData = null;
             try {
-                console.log(data.exif);
-                exifData = parseExif(data.exif);
+                console.log(img.exifdata);
+                exifData = parseExif(img.exifdata);
             }
             catch(err) {
                 alert("unable to parse exif location");
@@ -272,15 +266,12 @@ RkEventRow.prototype.photoPickerChanged = function(/*event*/imgData) {
                 }
             }
         }
-        
+       
         if(!foundLocationInPhoto) {
-            alert("Use location service.");
             sharedLocationManager.getLocation(this);
         }
-    }, this));*/
-    photoRow.displayPhoto(/*file*/imgData, 0);
-            alert("Use location service.");
-            sharedLocationManager.getLocation(this);
+        hidePageBusy();
+    }, this));
 };
 
 
@@ -309,43 +300,26 @@ RkEventRow.prototype.btnEditPressed = function(event) {
 };
 
 RkEventRow.prototype.takePicture = function() {
-    //this.photoPicker.trigger('click');
-
-    //event.preventDefault();
-    imgPopup.find("#btnCapturePhoto").off("click").on("click", $.proxy(
-        function(){
-            navigator.camera.getPicture(
-                $.proxy(function(imgData) { //onPhotoDataSuccess
-                    this.photoElement.attr("src",
-                        "data:image/jpeg;base64,"+imgData);
-                    imgPopup.popup("close");
-                }, this),
-                function(msg) { //onFail
-                    alert("Camera Failed: "+msg);
-                },
-                {
-                    quality: 50,
-                    destinationType: navigator.camera.DestinationType.DATA_URL
-                }
-            );
-        },
-        this
-    )); 
-    imgPopup.find("#btnGetPhoto").off("click").on("click", $.proxy(function() {
+    imgPopup.find('a').off("click").on("click", $.proxy(function(e) {
+        imgPopup.popup("close");
+        showPageBusy(PROCESSING);
+        var option = {
+            destinationType: navigator.camera.DestinationType.FILE_URI
+        };
+        if(e.target.id==='btnGetPhoto') {
+            option.sourceType = navigator.camera.PictureSourceType.PHOTOLIBRARY;
+        }
         navigator.camera.getPicture(
-            $.proxy(this.photoPickerChanged, this),
-            function(msg) { //onFail
-                imgPopup.popup("close");
+            $.proxy(function(imgURI) {
+                this.hasImage = true;
+                this.displayPhoto(imgURI);
+            }, this),
+            function(msg) {
                 alert("Camera Failed: "+msg);
             },
-            {
-                destinationType: navigator.camera.DestinationType.DATA_URL,
-                sourceType: navigator.camera.PictureSourceType.PHOTOLIBRARY
-            }
+            option
         );
-
-    },
-    this));
+    }, this));
     imgPopup.popup("open");
 };
 
@@ -368,8 +342,6 @@ function RkEvent() {
     this.desc = null;   
     this.address = null;
     this.shortAddress = null;
-    this.speciesCh = null;
-    this.speciesLat = null;
     this.license = null;
 }
 
@@ -380,8 +352,6 @@ RkEvent.prototype.clear = function() {
     this.desc = null;   
     this.address = null;
     this.shortAddress = null;
-    this.speciesCh = null;
-    this.speciesLat = null;
     this.license = null;
 };
 
@@ -619,13 +589,13 @@ function hidePageBusy() {
 function parseExif(exif) {
     exifData = {};
     
-    var latRef = exif[0x0001];
-    var lngRef = exif[0x0003];
-    var latValues = exif[0x0002];
-    var lngValues = exif[0x0004];
+    var latRef = exif.GPSLatitudeRef; //exif[0x0001];
+    var lngRef = exif.GPSLongitudeRef; //exif[0x0003];
+    var latValues = exif.GPSLatitude; //exif[0x0002];
+    var lngValues = exif.GPSLongitude; //exif[0x0004];
     if(latRef!=null && lngRef!=null && latValues!=null && lngValues!=null) {
-        var altitudeRef = exif[0x0005]==0 ? 1 : -1;
-        var altitude = exif[0x0006];
+        var altitudeRef = exif.GPSAltitudeRef; //exif[0x0005]==0 ? 1 : -1;
+        var altitude = exif.GPSAltitude; //exif[0x0006];
         var latSign = (latRef=="S" ? -1 : 1);
         var latitude = (latValues[0] + latValues[1] / 60.0 + latValues[2] / 3600.0) * latSign;
         var lngSign = (lngRef=="W" ? -1 : 1);
@@ -634,7 +604,7 @@ function parseExif(exif) {
         exifData.location = exifLocation;
     }
 
-    var dateTimeOriginal = exif[0x9003];
+    var dateTimeOriginal = exif.DateTimeOriginal; //exif[0x9003];
     if(dateTimeOriginal!=null) {
         var pos = dateTimeOriginal.indexOf(" ");
         var dateString = dateTimeOriginal.substring(0, pos);
@@ -744,50 +714,70 @@ function upload(events, done, fail) {
     
     request.fail(fail);
     */
-    $.ajax({
-        url: "http://roadkill.tw/testbed/drupalgap/file",
-        type: "POST",
-        dataType: "json",
-        data: {
-            "file": {
-                "file": events[0].photoFile,
-                "filename": "image.jpg",
-                "uid": localStorage.getItem("uid")
-            }
-        },
-        beforeSend: function (xhr){
-            xhr.setRequestHeader('X-CSRF-Token',
-                                localStorage.getItem("token"));
-            xhr.setRequestHeader('Content-type',
-                                'application/x-www-form-urlencoded');
-        },
-        success: function(result) {
-            //done();
-            //formToFieldHandler(result, callback);
-            $.ajax({
-                url: "http://roadkill.tw/testbed/drupalgap/node",
-                type: 'POST',
-                dataType: 'json',
-                data: {"nid":"","title":'['+events[0].shortAddress+'] '+Date(events[0].time),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
-                beforeSend: function (xhr){
-                    xhr.setRequestHeader('X-CSRF-Token',
-                                        localStorage.getItem("token"));
-                },
-                success: function(result){
-                    done();
-                },
-                error: function(err){
-                    fail();
-                    alert(err);
-                }
-            });
 
-        },
-        error: function(err){
-            fail();
-            console.log(err);
+
+    var xhr = new XMLHttpRequest();
+    var reader = new FileReader();
+    xhr.open('GET', events[0].photoFile.src, true);
+    xhr.responseType = 'blob';
+    xhr.onload = function() {
+        if (this.status == 200) {
+            var myBlob = this.response;
+            // myBlob is now the blob that the object URL pointed to.
+            reader.onload = function (e) {
+                events[0].photoFile = e.target.result.replace(/data:\S*;base64,/, '');
+
+
+                $.ajax({
+                    url: "http://roadkill.tw/testbed/drupalgap/file",
+                    type: "POST",
+                    dataType: "json",
+                    data: {
+                        "file": {
+                            "file": events[0].photoFile,
+                            "filename": "image.jpg",
+                            "uid": localStorage.getItem("uid")
+                        }
+                    },
+                    beforeSend: function (xhr){
+                        xhr.setRequestHeader('X-CSRF-Token',
+                                            localStorage.getItem("token"));
+                        xhr.setRequestHeader('Content-type',
+                                            'application/x-www-form-urlencoded');
+                    },
+                    success: function(result) {
+alert(result.fid);
+                        //done();
+                        //formToFieldHandler(result, callback);
+                        $.ajax({
+                            url: "http://roadkill.tw/testbed/drupalgap/node",
+                            type: 'POST',
+                            dataType: 'json',
+                            data: {"nid":"","title":'['+events[0].shortAddress+'] '+Date(events[0].time),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
+                            beforeSend: function (xhr){
+                                xhr.setRequestHeader('X-CSRF-Token',
+                                                    localStorage.getItem("token"));
+                            },
+                            success: function(result){
+                                done();
+                            },
+                            error: function(err){
+                                fail();
+                                alert(err);
+                            }
+                        });
+
+                    },
+                    error: function(err){
+                        fail();
+                        console.log(err);
+                    }
+                });
+            };
+            reader.readAsDataURL(myBlob);
         }
-    });
+    };
+    xhr.send();
 }
 
 function clearReport(report) {
@@ -808,12 +798,29 @@ function prepareReport(report) {
             //var file = eventRow.photoElement.attr('src');
             var desc = eventRow.descElement.val();
             event.desc = desc;
-            //event.photoFile = file.substr(file.indexOf(";base64,")+8);
             var license = eventRow.licenseSelect.find("option:selected").val();
             event.license = license;
         }
     }
     return null;
+}
+
+function setBase64FromURL(event, url) {
+    var xhr = new XMLHttpRequest();
+    var reader = new FileReader();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'blob';
+    xhr.onload = function() {
+        if (this.status == 200) {
+            var myBlob = this.response;
+            // myBlob is now the blob that the object URL pointed to.
+            reader.onload = function (e) {
+                event.photoFile = e.target.result.replace(/data:\S*;base64,/, '');
+            };
+            reader.readAsDataURL(myBlob);
+        }
+    };
+    xhr.send();
 }
 
 function validateEvents(events) {
