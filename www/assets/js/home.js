@@ -188,9 +188,12 @@ RkEventRow.prototype.clear = function() {
 };
 
 RkEventRow.prototype.retakePhoto = function() {
+    editPopup.on("popupafterclose", $.proxy(function(event, ui) {
+        editPopup.off("popupafterclose");
+        this.takePicture();
+    }, this));
     editPopup.popup("close");
     this.clear();
-    this.takePicture();
 };
 
 RkEventRow.prototype.displayPhoto = function(imgURI/*file*/, rotation) {
@@ -270,7 +273,7 @@ RkEventRow.prototype.photoLoaded = function() {
         if(!foundLocationInPhoto) {
             sharedLocationManager.getLocation(this);
         }
-        hidePageBusy();
+        //hidePageBusy();
     }, this));
 };
 
@@ -302,27 +305,23 @@ RkEventRow.prototype.btnEditPressed = function(event) {
 RkEventRow.prototype.takePicture = function() {
     imgPopup.find('a').off("click").on("click", $.proxy(function(e) {
         imgPopup.popup("close");
-        showPageBusy(PROCESSING);
         var option = {
-            destinationType: navigator.camera.DestinationType.FILE_URI
+            destinationType: navigator.camera.DestinationType.FILE_URI,
+            sourceType: navigator.camera.PictureSourceType[e.target.id],
+            saveToPhotoAlbum: true,
+            correctOrientation: true
         };
-        if(e.target.id==='btnGetPhoto') {
-            option.sourceType = navigator.camera.PictureSourceType.PHOTOLIBRARY;
-        } else { // default source from camera
-            option.saveToPhotoAlbum = true;
-            option.correctOrientation = true;
-        }
         navigator.camera.getPicture(
             $.proxy(function(imgURI) {
-                this.hasImage = true;
                 this.displayPhoto(imgURI);
+                this.hasImage = true;
             }, this),
             function(msg) {
                 alert("Camera Failed: "+msg);
-                hidePageBusy();
             },
             option
         );
+        //showPageBusy(PROCESSING);
     }, this));
     imgPopup.popup("open");
 };
