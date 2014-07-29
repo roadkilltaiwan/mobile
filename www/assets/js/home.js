@@ -308,6 +308,9 @@ RkEventRow.prototype.takePicture = function() {
         };
         if(e.target.id==='btnGetPhoto') {
             option.sourceType = navigator.camera.PictureSourceType.PHOTOLIBRARY;
+        } else { // default source from camera
+            option.saveToPhotoAlbum = true;
+            option.correctOrientation = true;
         }
         navigator.camera.getPicture(
             $.proxy(function(imgURI) {
@@ -316,6 +319,7 @@ RkEventRow.prototype.takePicture = function() {
             }, this),
             function(msg) {
                 alert("Camera Failed: "+msg);
+                hidePageBusy();
             },
             option
         );
@@ -715,6 +719,36 @@ function upload(events, done, fail) {
     request.fail(fail);
     */
 
+    /*
+alert(new Date(events[0].time));
+    var fileURI = events[0].photoFile.src;
+
+    var win = function(r) {
+        console.log("Code = " + r.responseCode);
+        alert("Response = " + r.response);
+        console.log("Sent = " + r.bytesSent);
+    };
+
+    var fail = function(error) {
+        alert("An error has occurred: Code = " + error.code);
+        console.log("upload error source " + error.source);
+        console.log("upload error target " + error.target);
+    };
+
+    var options = new FileUploadOptions();
+    options.fileKey="file";
+    options.fileName=fileURI.substr(fileURI.lastIndexOf('/')+1);
+    options.mimeType="image/jpeg";
+    options.field_name = 'field_image';
+    options.uid = localStorage.getItem("uid");
+
+    var headers = {'X-CSRF-Token': localStorage.getItem("token")};
+    options.headers = headers;
+
+    var ft = new FileTransfer();
+    ft.upload(fileURI, encodeURI("http://roadkill.tw/testbed/node/141/attach_file"), win, fail, options);
+
+*/
 
     var xhr = new XMLHttpRequest();
     var reader = new FileReader();
@@ -746,14 +780,13 @@ function upload(events, done, fail) {
                                             'application/x-www-form-urlencoded');
                     },
                     success: function(result) {
-alert(result.fid);
                         //done();
                         //formToFieldHandler(result, callback);
                         $.ajax({
                             url: "http://roadkill.tw/testbed/drupalgap/node",
                             type: 'POST',
                             dataType: 'json',
-                            data: {"nid":"","title":'['+events[0].shortAddress+'] '+Date(events[0].time),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
+                            data: {"nid":"","title":'['+events[0].shortAddress+'] '+(new Date(events[0].time)),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
                             beforeSend: function (xhr){
                                 xhr.setRequestHeader('X-CSRF-Token',
                                                     localStorage.getItem("token"));
