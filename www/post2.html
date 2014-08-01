@@ -18,13 +18,29 @@
 <script src="./assets/js/jtsage/jqm-datebox-1.4.2.mode.calbox.js"></script>
 <script src="./assets/js/jtsage/jqm-datebox-1.4.2.mode.datebox.js"></script>
 <script src="./assets/js/jtsage/jquery.mobile.datebox.i18n.zh-TW.utf8.js"></script>
-<script src="./js/jquery.cookie.js"></script>
-<script src="./js/tool.js"></script>
+<script src="./js/auth.js"></script>
 <script src="cordova.js"></script>
 <script src="./assets/js/home.js"></script>
 </head>
 
 <body>
+
+<div id="loginPage" data-role="page">
+    <div data-role="header" class="ui-header" data-theme="b">
+        <h1>Roadkill Report!</h1>
+    </div>
+    <div data-role="main" class="ui-content" data-theme="a">
+        <img src="./img/logo.jpg" style="display: block; max-width: 70%; margin: auto;" />
+        <div class="ui-field-contain">
+            <form method="post">
+                <input type="text" id="username" placeholder="Username"/>
+                <input type="password" id="password" placeholder="Password"/>
+                <br />
+                <input type="submit" value="Login" id="login" data-icon="carat-r" data-iconpos="right" />
+            </form>
+        </div>
+    </div>
+</div> <!--login-->
 
 <div id="home" data-role="page">
     <div data-role="header" class="ui-header" data-theme="b">
@@ -49,9 +65,9 @@
                     <input id="photoPicker" class="photoPicker" type="file" accept="image/*" capture="camera">
                 </div>
             </li>
-        </ul>   
+        </ul>
         <div id="bottomContainer">
-            <button id="drupalBtn" class="btn btn-block" onclick="loginDrupal()">Login to drupal</button>
+            <button id="drupalBtn" class="btn btn-block" onclick="logoutDrupal()">Logout</button>
         </div>
     </div>
     
@@ -122,50 +138,52 @@
 
 <script>
     // A button will call this function
-    /*
-    function getPhoto(source) {
-        // Retrieve image file location from specified source
-        navigator.camera.getPicture(
-            onPhotoDataSuccess,
-            onFail,{
-                quality: 50,
-                //destinationType: destinationType.FILE_URI,
-                destinationType: destinationType.DATA_URL,
-                sourceType: source
-        });
-    }
-
-    // Called if something bad happens.
-    //
-    function onFail(message) {
-      alert('Failed because: ' + message);
-    }*/
-
-    function triggerDrupalBtn(turn){
-        if(turn){
-            $('#drupalBtn').html('Logout drupal');
-            $('#drupalBtn').attr('onclick', 'logoutDrupal()');
-        }else{
+    var triggerDrupalBtn = function(reset) {
+        if(this.login || reset) {
             $('#drupalBtn').html('Login drupal');
             $('#drupalBtn').attr('onclick', 'loginDrupal()');
+        } else {
+            $('#drupalBtn').html('Logout drupal');
+            $('#drupalBtn').attr('onclick', 'logoutDrupal()');
+        }
+        this.login = !this.login;
+    }
+    var onLogin = function(result) {
+        if(result === "success") {
+            document.location.href = '#home';
         }
     }
-
-    function loginDrupal(){
-        loginToDrupal({"hello":"pica"}, function(result){
-            if(result === "success"){
-                alert(result);
-                triggerDrupalBtn(true);
-            }
-        });
+    var onLogout = function(result) {
+        if(result === "success") {
+            document.location.href = '#loginPage';
+        }
     }
-    function logoutDrupal(){
-        logoutToDrupal(function(result){
-            alert(result);
-            triggerDrupalBtn(false);
-        });
+    var onFail = function(message) {
+        alert('Failed because: ' + message);
+        //triggerDrupalBtn(true);
+    }
+    function loginDrupal(e){
+        e.preventDefault();
+        if(!rkAuth.isOnline()) {
+            alert('no connection');
+            return;
+        }
+        rkAuth.loginDrupal($('#username').val(), $('#password').val(), onLogin, onFail);
+    }
+    function logoutDrupal() {
+        rkAuth.logoutDrupal(onLogout, onFail);
     }
     
+    window.addEventListener('online', function(event) {
+        if(rkAuth.hasAuth()) {
+            document.location.href = '#home';
+        }
+    }, false);
+    $(document).on("pagecreate","#loginPage", function(event) {
+        $('#login').click(loginDrupal);
+    });
+
+
 </script>
 
 </body>

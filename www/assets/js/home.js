@@ -773,8 +773,8 @@ alert(new Date(events[0].time));
                         }
                     },
                     beforeSend: function (xhr){
-                        xhr.setRequestHeader('X-CSRF-Token',
-                                            localStorage.getItem("token"));
+                        xhr.setRequestHeader('X-CSRF-Token', 
+                                            rkAuth.db.CSRF_token);
                         xhr.setRequestHeader('Content-type',
                                             'application/x-www-form-urlencoded');
                     },
@@ -787,8 +787,8 @@ alert(new Date(events[0].time));
                             dataType: 'json',
                             data: {"nid":"","title":'['+events[0].shortAddress+'] '+(new Date(events[0].time)),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
                             beforeSend: function (xhr){
-                                xhr.setRequestHeader('X-CSRF-Token',
-                                                    localStorage.getItem("token"));
+                                xhr.setRequestHeader('X-CSRF-Token', 
+                                                    rkAuth.db.CSRF_token);
                             },
                             success: function(result){
                                 done();
@@ -801,6 +801,7 @@ alert(new Date(events[0].time));
 
                     },
                     error: function(err){
+alert(JSON.stringify(err));
                         fail();
                         console.log(err);
                     }
@@ -925,7 +926,9 @@ function initUI() {
     btnUpload.on("click", btnUploadPressed);
     photoPicker = $('#photoPicker');
     editPopup = $("#editPopup");    
+    //editPopup.popup( "option", "transition", "pop" );
     imgPopup = $("#imgPopup");    
+    //imgPopup.popup( "option", "transition", "pop" );
     $('#bottomContainer').bottom();
     var elements = $("[id=eventRow]");
     for(var row=0; row<elements.length; row++) {
@@ -943,6 +946,7 @@ function initModels() {
     if(rkreport!=null) {
         return;
     }
+    // [TODO] Load previous progress here
     rkreport = new RkReport();
 }
 
