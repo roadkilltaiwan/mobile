@@ -20,27 +20,11 @@
 <script src="./assets/js/jtsage/jquery.mobile.datebox.i18n.zh-TW.utf8.js"></script>
 <script src="./js/auth.js"></script>
 <script src="cordova.js"></script>
+<script src="openfb.js"></script>
 <script src="./assets/js/home.js"></script>
 </head>
 
 <body>
-
-<div id="loginPage" data-role="page">
-    <div data-role="header" class="ui-header" data-theme="b">
-        <h1>Roadkill Report!</h1>
-    </div>
-    <div data-role="main" class="ui-content" data-theme="a">
-        <img src="./img/logo.jpg" style="display: block; max-width: 70%; margin: auto;" />
-        <div class="ui-field-contain">
-            <form method="post">
-                <input type="text" id="username" placeholder="Username"/>
-                <input type="password" id="password" placeholder="Password"/>
-                <br />
-                <input type="submit" value="Login" id="login" data-icon="carat-r" data-iconpos="right" />
-            </form>
-        </div>
-    </div>
-</div> <!--login-->
 
 <div id="home" data-role="page">
     <div data-role="header" class="ui-header" data-theme="b">
@@ -119,6 +103,23 @@
 
 </div>
 
+<div id="loginPage" data-role="page">
+    <div data-role="header" class="ui-header" data-theme="b">
+        <h1>Roadkill Report!</h1>
+    </div>
+    <div data-role="main" class="ui-content" data-theme="a">
+        <img src="./img/logo.jpg" style="display: block; max-width: 70%; margin: auto;" />
+        <div class="ui-field-contain">
+            <form method="post">
+                <input type="text" id="username" placeholder="Username"/>
+                <input type="password" id="password" placeholder="Password"/>
+                <br />
+                <input type="submit" value="Login" id="login" data-icon="carat-r" data-iconpos="right" />
+            </form>
+        </div>
+    </div>
+</div> <!--login-->
+
 <div id="map" data-role="page">
     <div data-role="main" class="ui-content" data-theme="a" style="padding:0;">
         <div id="gmapCanvas" style="width:100%;"></div>
@@ -151,6 +152,7 @@
     }
     var onLogin = function(result) {
         if(result === "success") {
+            rkAuth.loginFB();
             document.location.href = '#home';
         }
     }
@@ -175,9 +177,11 @@
         rkAuth.logoutDrupal(onLogout, onFail);
     }
     
-    window.addEventListener('online', function(event) {
-        if(rkAuth.hasAuth()) {
-            document.location.href = '#home';
+    document.addEventListener('deviceready', function(event) {
+        if(!rkAuth.hasAuth()) {
+            document.location.href = '#loginPage';
+        } else {
+            onLogin("success");
         }
     }, false);
     $(document).on("pagecreate","#loginPage", function(event) {

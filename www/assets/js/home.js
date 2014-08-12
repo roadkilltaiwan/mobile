@@ -505,7 +505,7 @@ MapView.prototype.dismiss = function() {
         transition: "slide",
         reverse: true
     };
-    $.mobile.pageContainer.pagecontainer("change", "#", options);
+    $.mobile.pageContainer.pagecontainer("change", "#home", options);
 };
 
 MapView.prototype.btnConfirmLocationPressed = function(event, ui) {
@@ -691,67 +691,6 @@ function btnTakePicturePressed(event, ui) {
 }
 
 function upload(events, done, fail) {
-    /*
-    var formData = new FormData();
-    formData.append("event_count", events.length);
-    for(var i=0; i<events.length; i++) {
-        var event = events[i];
-        formData.append("lat_" + i, event.location.latitude);
-        formData.append("lng_" + i, event.location.longitude);
-        formData.append("altitude_" + i, event.location.altitude);
-        formData.append("time_" + i, event.time);
-        formData.append("address_" + i, event.address);
-        formData.append("photo_" + i, event.photoFile);
-        formData.append("photo_desc_" + i, event.desc);
-    }
-
-    var request = $.ajax({
-        url: "reports",
-        type: "POST",
-        beforeSend: function(xhr) {xhr.setRequestHeader('X-CSRF-Token', $('meta[name="csrf-token"]').attr('content'));},
-        data: formData,
-        cache: false,
-        processData: false,
-        contentType: false,
-        timeout: 120000
-    });
-    
-    request.done(done);
-    
-    request.fail(fail);
-    */
-
-    /*
-alert(new Date(events[0].time));
-    var fileURI = events[0].photoFile.src;
-
-    var win = function(r) {
-        console.log("Code = " + r.responseCode);
-        alert("Response = " + r.response);
-        console.log("Sent = " + r.bytesSent);
-    };
-
-    var fail = function(error) {
-        alert("An error has occurred: Code = " + error.code);
-        console.log("upload error source " + error.source);
-        console.log("upload error target " + error.target);
-    };
-
-    var options = new FileUploadOptions();
-    options.fileKey="file";
-    options.fileName=fileURI.substr(fileURI.lastIndexOf('/')+1);
-    options.mimeType="image/jpeg";
-    options.field_name = 'field_image';
-    options.uid = localStorage.getItem("uid");
-
-    var headers = {'X-CSRF-Token': localStorage.getItem("token")};
-    options.headers = headers;
-
-    var ft = new FileTransfer();
-    ft.upload(fileURI, encodeURI("http://roadkill.tw/testbed/node/141/attach_file"), win, fail, options);
-
-*/
-
     var ev = events[0];
     var xhr = new XMLHttpRequest();
     var reader = new FileReader();
@@ -802,6 +741,7 @@ alert(new Date(events[0].time));
                                 }
                             }],
                             "field_data_res": [{"value": "323"}],
+                            //"fb token":[{"value": rkAuth.db.fbtoken}],
                             "field_app_post_type": [{"value": ev.fbPost}]//,
                             //"cc": {"type": "!"}
                         };

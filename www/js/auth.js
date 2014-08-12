@@ -91,6 +91,17 @@ var rkAuth = {
             }
         });
     },
+    "loginFB": function() {
+        openFB.init('1465399207063220', null, this.db);
+        openFB.login('publish_actions',
+            $.proxy(function() {
+                alert('Facebook login succeeded\n'+this.db.fbtoken);
+            }, this),
+            function(error) {
+                alert('Facebook login failed: ' + error.error_description);
+            }
+        );
+    },
     "isOnline": function() {
         try {
             var networkState = navigator.connection.type;
