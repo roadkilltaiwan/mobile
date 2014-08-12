@@ -118,6 +118,7 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.descElement = this.rowElement.find(".photoDesc");
     this.locationElement = this.rowElement.find(".location");
     this.licenseSelect = $("#select-cc");
+    this.fbPostSelect = $("#select-fbPost");
     this.btnEdit = this.rowElement.find(".btnEdit");
     this.btnEdit.on("click", $.proxy(this.btnEditPressed, this));
     this.rowNumber = rowNumber;
@@ -346,6 +347,7 @@ function RkEvent() {
     this.address = null;
     this.shortAddress = null;
     this.license = null;
+    this.fbPost = null;
 }
 
 RkEvent.prototype.clear = function() {
@@ -356,6 +358,7 @@ RkEvent.prototype.clear = function() {
     this.address = null;
     this.shortAddress = null;
     this.license = null;
+    this.fbPost = null;
 };
 
 function RkReport() {
@@ -749,25 +752,25 @@ alert(new Date(events[0].time));
 
 */
 
+    var ev = events[0];
     var xhr = new XMLHttpRequest();
     var reader = new FileReader();
-    xhr.open('GET', events[0].photoFile.src, true);
+    xhr.open('GET', ev.photoFile.src, true);
     xhr.responseType = 'blob';
     xhr.onload = function() {
         if (this.status == 200) {
             var myBlob = this.response;
             // myBlob is now the blob that the object URL pointed to.
-            reader.onload = function (e) {
-                events[0].photoFile = e.target.result.replace(/data:\S*;base64,/, '');
-
+            reader.onload = function () {
+                ev.photoFile = this.result.replace(/data:\S*;base64,/, '');
 
                 $.ajax({
-                    url: "http://roadkill.tw/testbed/drupalgap/file",
+                    url: "http://roadkill.tw/phone/drupalgap/file",
                     type: "POST",
                     dataType: "json",
                     data: {
                         "file": {
-                            "file": events[0].photoFile,
+                            "file": ev.photoFile,
                             "filename": "image.jpg",
                             "uid": localStorage.getItem("uid")
                         }
@@ -779,23 +782,47 @@ alert(new Date(events[0].time));
                                             'application/x-www-form-urlencoded');
                     },
                     success: function(result) {
-                        //done();
-                        //formToFieldHandler(result, callback);
+                        var sDate = new Date(ev.time);
+                        var data = {
+                            "type": "image",
+                            "status": "1",
+                            "promote": "0",
+                            "title": '['+ev.shortAddress+'] '+sDate,
+                            "body": ev.desc,
+                            "field_imagefield": [{"fid": result.fid}],
+                            "field_location_img": [{
+                                "name": ev.address,
+                                "latitude": ev.location.latitude,
+                                "longitude": ev.location.longitude
+                            }],
+                            "field_img_date": [{
+                                "value": {
+                                    "date": /[\d-]*/.exec(sDate.toISOString())[0],
+                                    "time": /\S*/.exec(sDate.toTimeString())[0]
+                                }
+                            }],
+                            "field_data_res": [{"value": "323"}],
+                            "field_app_post_type": [{"value": ev.fbPost}]//,
+                            //"cc": {"type": "!"}
+                        };
+                        if(ev.license!=="") data["cc"] = {};
                         $.ajax({
-                            url: "http://roadkill.tw/testbed/drupalgap/node",
+                            url: "http://roadkill.tw/phone/drupalgap/node",
                             type: 'POST',
                             dataType: 'json',
-                            data: {"nid":"","title":'['+events[0].shortAddress+'] '+(new Date(events[0].time)),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
+                            data: //{"nid":"","title":'['+events[0].shortAddress+'] '+(new Date(events[0].time)),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
+                            data,
                             beforeSend: function (xhr){
                                 xhr.setRequestHeader('X-CSRF-Token', 
                                                     rkAuth.db.CSRF_token);
                             },
                             success: function(result){
+                                alert(JSON.stringify(result));
                                 done();
                             },
                             error: function(err){
                                 fail();
-                                alert(err);
+                                alert(JSON.stringify(err));
                             }
                         });
 
@@ -833,6 +860,8 @@ function prepareReport(report) {
             event.desc = desc;
             var license = eventRow.licenseSelect.find("option:selected").val();
             event.license = license;
+            var fbPost = eventRow.fbPostSelect.find("option:selected").val();
+            event.fbPost = fbPost;
         }
     }
     return null;
