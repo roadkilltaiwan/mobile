@@ -690,8 +690,8 @@ function btnTakePicturePressed(event, ui) {
     return false;       
 }
 
-function upload(events, done, fail) {
-    var ev = events[0];
+function upload(ev, done, fail) {
+    //var ev = events[0];
     var xhr = new XMLHttpRequest();
     var reader = new FileReader();
     xhr.open('GET', ev.photoFile.src, true);
@@ -702,7 +702,6 @@ function upload(events, done, fail) {
             // myBlob is now the blob that the object URL pointed to.
             reader.onload = function () {
                 ev.photoFile = this.result.replace(/data:\S*;base64,/, '');
-
                 $.ajax({
                     url: "http://roadkill.tw/phone/drupalgap/file",
                     type: "POST",
@@ -722,31 +721,39 @@ function upload(events, done, fail) {
                     },
                     success: function(result) {
                         var sDate = new Date(ev.time);
-                        var data = {
-                            "type": "image",
-                            "status": "1",
-                            "promote": "0",
-                            "title": '['+ev.shortAddress+'] '+sDate,
-                            "body": ev.desc,
-                            "field_imagefield": [{"fid": result.fid}],
-                            "field_location_img": [{
-                                "name": ev.address,
-                                "latitude": ev.location.latitude,
-                                "longitude": ev.location.longitude
-                            }],
-                            "field_img_date": [{
-                                "value": {
-                                    "date": /[\d-]*/.exec(sDate.toISOString())[0],
-                                    "time": /\S*/.exec(sDate.toTimeString())[0]
-                                }
-                            }],
-                            "field_data_res": [{"value": "323"}],
-                            //"fb token":[{"value": rkAuth.db.fbtoken}],
-                            "field_app_post_type": [{"value": ev.fbPost}]//,
-                            //"cc": {"type": "!"}
-                        };
-                        if(ev.license!=="") data["cc"] = {};
-                        $.ajax({
+
+                        var getter = new XMLHttpRequest();
+getter.onreadystatechange = function () {
+  console.log(this.status);
+  if (this.readyState == 4 && this.status == 200) {
+    var form = this.responseXML.getElementById('node-form');
+    form['field_imagefield[0][fid]'].value = result.fid;
+    //formData.append("files[field_imagefield_0]");
+    form['title'].value = '['+ev.shortAddress+'] '+sDate;
+    form['body'].value = ev.desc;
+    form['field_app_post_type[value]'][ev.fbPost].checked = true;
+    form['field_data_res[value]'][1].checked = true;
+    form['field_location_img[0][name]'].value = ev.address;
+    form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+    form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+    form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(sDate.toISOString())[0];
+    form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+    form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
+    form['status'].value = 1;
+    form['promote'].value = 1;
+    
+    var request = new XMLHttpRequest();
+    request.open('POST', 'http://roadkill.tw/phone/node/add/image');
+    request.onload = function () {
+      done();
+    }
+    request.send(new FormData(form));
+  }
+}
+getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
+getter.responseType = 'document';
+getter.send();
+/*                        $.ajax({
                             url: "http://roadkill.tw/phone/drupalgap/node",
                             type: 'POST',
                             dataType: 'json',
@@ -765,7 +772,7 @@ function upload(events, done, fail) {
                                 alert(JSON.stringify(err));
                             }
                         });
-
+*/
                     },
                     error: function(err){
 alert(JSON.stringify(err));
@@ -773,6 +780,7 @@ alert(JSON.stringify(err));
                         console.log(err);
                     }
                 });
+
             };
             reader.readAsDataURL(myBlob);
         }
@@ -863,9 +871,54 @@ function btnUploadPressed(event, ui) {
     if(error!=null) {
         alert(error.message);
         return;
-    } 
-    showPageBusy(UPLOADING);
-    upload(events, done, fail); 
+    }
+    var publish = events.some(function(ev, i, arr) { return ev.fbPost==0; });
+    if(publish) {
+        openFB.api({
+            "path": "/me/permissions",
+            "success": function (response) {
+                var publishGranted = false;
+                var publishListed = response.data.some(function(elem) {
+                    var found = elem["permission"] == "publish_actions";
+                    if(found) publishGranted = elem["status"] == "granted";
+                    return found;
+                });
+                if(!publishGranted) {
+                    var request = 'publish_actions';
+                    if(publishListed) {
+                        request += '&auth_type=rerequest';
+                    }
+                    openFB.login(request,
+                        function() {
+                            showPageBusy(UPLOADING);
+                            events.forEach(function(ev, i, arr) {
+                                upload(ev, done, fail);
+                            });
+                        },
+                        function(error) {
+                            alert('failed: ' + error.error_description);
+                        }
+                    );
+                } else {
+                    showPageBusy(UPLOADING);
+                    events.forEach(function(ev, i, arr) {
+                        upload(ev, done, fail);
+                    });
+                }
+            },
+            "error": function(error) {
+                alert('failed: ' + error.message);
+                if(error.code==190) { //invalid access token
+                    rkAuth.loginFB();
+                }
+            }
+        });
+    }else {
+        showPageBusy(UPLOADING);
+        events.forEach(function(ev, i, arr) {
+            upload(ev, done, fail);
+        }); 
+    }
 }
 
 function numberToString(number) {
