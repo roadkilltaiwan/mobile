@@ -1,3 +1,6 @@
+"use strict";
+(function() {
+
 var LOCATION_SERVICE_TIMEOUT = 10000;
 var HTTP_REQUEST_TIMEOUT = 10000;
 var GOOGLE_MAPS_API_URL = "http://maps.googleapis.com/maps/api/geocode/json?language=zh-TW&sensor=true&latlng=";
@@ -118,7 +121,7 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.descElement = this.rowElement.find(".photoDesc");
     this.locationElement = this.rowElement.find(".location");
     this.licenseSelect = $("#select-cc");
-    this.fbPostSelect = $("#select-fbPost");
+    this.fbPostIdSelect = $("#select-fbPostId");
     this.btnEdit = this.rowElement.find(".btnEdit");
     this.btnEdit.on("click", $.proxy(this.btnEditPressed, this));
     this.rowNumber = rowNumber;
@@ -347,7 +350,7 @@ function RkEvent() {
     this.address = null;
     this.shortAddress = null;
     this.license = null;
-    this.fbPost = null;
+    this.fbPostId = null;
 }
 
 RkEvent.prototype.clear = function() {
@@ -358,7 +361,7 @@ RkEvent.prototype.clear = function() {
     this.address = null;
     this.shortAddress = null;
     this.license = null;
-    this.fbPost = null;
+    this.fbPostId = null;
 };
 
 function RkReport() {
@@ -731,7 +734,7 @@ getter.onreadystatechange = function () {
     //formData.append("files[field_imagefield_0]");
     form['title'].value = '['+ev.shortAddress+'] '+sDate;
     form['body'].value = ev.desc;
-    form['field_app_post_type[value]'][ev.fbPost].checked = true;
+    form['field_app_post_type[value]'][ev.fbPostId].checked = true;
     form['field_data_res[value]'][1].checked = true;
     form['field_location_img[0][name]'].value = ev.address;
     form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
@@ -753,26 +756,6 @@ getter.onreadystatechange = function () {
 getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
 getter.responseType = 'document';
 getter.send();
-/*                        $.ajax({
-                            url: "http://roadkill.tw/phone/drupalgap/node",
-                            type: 'POST',
-                            dataType: 'json',
-                            data: //{"nid":"","title":'['+events[0].shortAddress+'] '+(new Date(events[0].time)),"type":"article","language":"und","body":{"und":[{"value":events[0].desc}]},"field_image":{"und":[{"fid":result.fid}]},"field_placename":{"und":[{"value":events[0].address}]},"field_license_text":{"und":{"value":events[0].license}},"field_source":{"und":{"value":"1"}},"field_geo":{"und":[{"geom":{"lat":events[0].location.latitude,"lon":events[0].location.longitude}}]}},
-                            data,
-                            beforeSend: function (xhr){
-                                xhr.setRequestHeader('X-CSRF-Token', 
-                                                    rkAuth.db.CSRF_token);
-                            },
-                            success: function(result){
-                                alert(JSON.stringify(result));
-                                done();
-                            },
-                            error: function(err){
-                                fail();
-                                alert(JSON.stringify(err));
-                            }
-                        });
-*/
                     },
                     error: function(err){
 alert(JSON.stringify(err));
@@ -808,8 +791,8 @@ function prepareReport(report) {
             event.desc = desc;
             var license = eventRow.licenseSelect.find("option:selected").val();
             event.license = license;
-            var fbPost = eventRow.fbPostSelect.find("option:selected").val();
-            event.fbPost = fbPost;
+            var fbPostId = eventRow.fbPostIdSelect.find("option:selected").val();
+            event.fbPostId = fbPostId;
         }
     }
     return null;
@@ -928,7 +911,7 @@ function btnUploadPressed(event, ui) {
             });
         }
     };
-    var publish = events.some(function(ev, i, arr) { return ev.fbPost==0; });
+    var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
     if(publish) {
         openFB.api({
             "path": "/me/permissions",
@@ -973,7 +956,7 @@ function initUI() {
     }
     btnUpload = $("#btnUpload");
     btnUpload.on("click", btnUploadPressed);
-    photoPicker = $('#photoPicker');
+    //photoPicker = $('#photoPicker');
     editPopup = $("#editPopup");    
     //editPopup.popup( "option", "transition", "pop" );
     imgPopup = $("#imgPopup");    
@@ -1022,3 +1005,4 @@ function init(event, ui) {
 $(document).on("pagecreate", "#home", init);
 $(document).on("pagecreate", "#map", initGmap);
 
+})();
