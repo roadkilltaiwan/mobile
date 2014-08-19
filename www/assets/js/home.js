@@ -872,45 +872,72 @@ function btnUploadPressed(event, ui) {
         alert(error.message);
         return;
     }
+    var permissionHandler = function(response) {
+        var groupGranted = response.data.some(function(elem) {
+            return elem["permission"] == "user_groups" &&
+                elem["status"] == "granted";
+        });
+        var publishGranted = response.data.some(function(elem) {
+            return elem["permission"] == "publish_actions" &&
+                elem["status"] == "granted";
+        });
+        if(!publishGranted || !groupGranted) {
+            var request = 'publish_actions';
+            if(!groupGranted) {
+                request += ',user_groups&auth_type=rerequest';
+            }
+            openFB.login(request,
+                function() {
+                    openFB.api({
+                        "path": "/me/permissions",
+                        "success": function(result) {
+                            var checkPublish = result.data.some(function(e) {
+                                return e["permission"]=="publish_actions" &&
+                                    e["status"] == "granted";
+                            });
+                            var checkGroup = result.data.some(function(e) {
+                                return e["permission"]=="user_groups" &&
+                                    e["status"] == "granted";
+                            });
+                            if(!checkPublish || !checkGroup) {
+                                alert("請重新授權發文，或變更發佈設定");
+                            }else {
+                                showPageBusy(UPLOADING);
+                                events.forEach(function(ev, i, arr) {
+                                    upload(ev, done, fail);
+                                });
+                            }
+                        },
+                        "error": function(error) {
+                            if(error.code==190) {
+                                alert("請重新授權發文，或變更發佈設定");
+                            }else {
+                                alert('Permission check error: '+error.message);
+                            }
+                        }
+                    });
+                },
+                function(error) {
+                    alert('Login failed: ' + error.error_description);
+                }
+            );
+        } else {
+            showPageBusy(UPLOADING);
+            events.forEach(function(ev, i, arr) {
+                upload(ev, done, fail);
+            });
+        }
+    };
     var publish = events.some(function(ev, i, arr) { return ev.fbPost==0; });
     if(publish) {
         openFB.api({
             "path": "/me/permissions",
-            "success": function (response) {
-                var publishGranted = false;
-                var publishListed = response.data.some(function(elem) {
-                    var found = elem["permission"] == "publish_actions";
-                    if(found) publishGranted = elem["status"] == "granted";
-                    return found;
-                });
-                if(!publishGranted) {
-                    var request = 'publish_actions';
-                    if(publishListed) {
-                        request += '&auth_type=rerequest';
-                    }
-                    openFB.login(request,
-                        function() {
-                            showPageBusy(UPLOADING);
-                            events.forEach(function(ev, i, arr) {
-                                upload(ev, done, fail);
-                            });
-                        },
-                        function(error) {
-                            alert('failed: ' + error.error_description);
-                        }
-                    );
-                } else {
-                    showPageBusy(UPLOADING);
-                    events.forEach(function(ev, i, arr) {
-                        upload(ev, done, fail);
-                    });
-                }
-            },
+            "success": permissionHandler,
             "error": function(error) {
-                alert('failed: ' + error.message);
                 if(error.code==190) { //invalid access token
-                    rkAuth.loginFB();
+                    permissionHandler({data:[]});
                 }
+                else alert('failed to connect Facebook: ' + error.message);
             }
         });
     }else {

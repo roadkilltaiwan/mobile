@@ -170,7 +170,9 @@
     }
     var onLogin = function(result) {
         if(result === "success") {
-            if(!rkAuth.db.fbtoken) rkAuth.loginFB();
+            try{
+                if(!rkAuth.db.fbtoken) rkAuth.loginFB();
+            }catch(err) { alert(err); }
             document.location.href = '#home';
         }
     }
@@ -196,7 +198,7 @@
     }
     
     document.addEventListener('deviceready', function(event) {
-        if(!rkAuth.hasAuth()) {
+        if(!rkAuth.init()) {
             document.location.href = '#loginPage';
         } else {
             onLogin("success");

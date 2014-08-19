@@ -5,38 +5,29 @@ var rkAuth = {
     "init": function(storage) {
         var ready = false;
         if(storage) this.db = storage;
-        if(!this.isSessExpired() && this.db.sessName) {
-            this.setSession();
-            var uid = -1;
-            uid = this.hasAuth();
-            alert('now connect as '+uid);
-            ready = !!uid;
-        }
-        return ready;
+        this.setSession();
+        return this.hasAuth();
     },
     "hasAuth": function() {
-        if(!this.isOnline()) return !this.isSessExpired();
+        if(!this.isOnline()) return !!this.db.sessName;
         var xhr = new XMLHttpRequest();
         xhr.open('POST', baseURL+'system/connect', false);
         //xhr.setRequestHeader('X-CSRF-Token', this.db.CSRF_token);
         //xhr.setRequestHeader('Cookie', this.db.sessName+'='+this.db.sessId);
         xhr.withCredentials = true;
         xhr.send();
-        return JSON.parse(xhr.responseText).user.uid; //Odds that uid returned too early?
+        return JSON.parse(xhr.responseText).user.uid>0;
     },
-    "setSession": function(session_name, sessid, life) {
-        if(session_name && sessid && life) {
+    "setSession": function(session_name, sessid) {
+        if(session_name && sessid) {
             this.db.setItem("sessName", session_name);
             this.db.setItem("sessId", sessid);
         }
-        var expires = new Date()
-        expires.setTime(this.db.expTime);
-        var opt = {expires: expires, path:'/', domain:'roadkill.tw'};
-        //$.cookie(this.db.sessName, this.db.sessId, opt);
+        var fbAppId = '255369314650200';
+        var redirectURL = 'http://roadkill.tw/phone/oauthcallback.html';
+        openFB.init(fbAppId, redirectURL, this.db);
     },
     "removeSession": function() {
-        var opt = {path:'/', domain:'roadkill.tw'};
-        //$.removeCookie(this.db.sessName, opt);
         this.db.removeItem('sessName');
         this.db.removeItem('sessId');
         this.db.removeItem('CSRF_token');
@@ -47,6 +38,7 @@ var rkAuth = {
             },
             function(err) {
                 alert('error: '+err.error_description);
+                openFB.logout();
             }
         );
     },
@@ -102,10 +94,7 @@ var rkAuth = {
         });
     },
     "loginFB": function() {
-        var fbAppId = '255369314650200';
-        var redirectURL = 'http://roadkill.tw/phone/oauthcallback.html';
         var permissions = 'user_groups,email';
-        openFB.init(fbAppId, redirectURL, this.db);
         openFB.login(permissions,
             function() {
                 alert('Facebook login succeeded\n');

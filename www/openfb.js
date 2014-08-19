@@ -150,7 +150,7 @@ var openFB = (function () {
      * Application-level logout: we simply discard the token.
      */
     function logout() {
-        tokenStore['fbtoken'] = undefined;
+        tokenStore.removeItem('fbtoken');
     }
 
     /**
@@ -198,7 +198,7 @@ var openFB = (function () {
         return api({method: 'DELETE',
             path: '/me/permissions',
             success: function () {
-                tokenStore['fbtoken'] = undefined;
+                tokenStore.removeItem('fbtoken');
                 success();
             },
             error: error});
