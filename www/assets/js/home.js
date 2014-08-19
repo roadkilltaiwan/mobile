@@ -1,4 +1,3 @@
-"use strict";
 (function() {
 
 var LOCATION_SERVICE_TIMEOUT = 10000;
@@ -116,8 +115,6 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.photoElement = this.rowElement.find(".photo");
     this.photoElement.on("click", $.proxy(this.photoPressed, this));
     this.photoElement.on("load", $.proxy(this.photoLoaded, this));
-    this.photoPicker = this.rowElement.find(".photoPicker");
-    //this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
     this.descElement = this.rowElement.find(".photoDesc");
     this.locationElement = this.rowElement.find(".location");
     this.licenseSelect = $("#select-cc");
@@ -178,8 +175,6 @@ RkEventRow.prototype.deletePhoto = function() {
         "-webkit-transform": "",
         "transform:rotate": ""
     });
-    //this.photoPicker.val("");
-    //this.photoPicker.on("change", $.proxy(this.photoPickerChanged, this));
 };
 
 RkEventRow.prototype.clear = function() {
@@ -273,7 +268,6 @@ RkEventRow.prototype.photoLoaded = function() {
                 }
             }
         }
-       
         if(!foundLocationInPhoto) {
             sharedLocationManager.getLocation(this);
         }
@@ -596,13 +590,13 @@ function hidePageBusy() {
 }
 
 function parseExif(exif) {
-    exifData = {};
+    var exifData = {};
     
     var latRef = exif.GPSLatitudeRef; //exif[0x0001];
     var lngRef = exif.GPSLongitudeRef; //exif[0x0003];
     var latValues = exif.GPSLatitude; //exif[0x0002];
     var lngValues = exif.GPSLongitude; //exif[0x0004];
-    if(latRef!=null && lngRef!=null && latValues!=null && lngValues!=null) {
+    if(latRef && lngRef && latValues && lngValues) {
         var altitudeRef = exif.GPSAltitudeRef; //exif[0x0005]==0 ? 1 : -1;
         var altitude = exif.GPSAltitude; //exif[0x0006];
         var latSign = (latRef=="S" ? -1 : 1);
@@ -614,7 +608,7 @@ function parseExif(exif) {
     }
 
     var dateTimeOriginal = exif.DateTimeOriginal; //exif[0x9003];
-    if(dateTimeOriginal!=null) {
+    if(dateTimeOriginal) {
         var pos = dateTimeOriginal.indexOf(" ");
         var dateString = dateTimeOriginal.substring(0, pos);
         dateString = dateString.replace(/:/g, '/');
@@ -686,11 +680,6 @@ function btnGetLocationPressed(event, ui) {
 
 function viewWidth() {
     return $(window).width() - 40;
-}
-
-function btnTakePicturePressed(event, ui) {
-    photoPicker.trigger('click');
-    return false;       
 }
 
 function upload(ev, done, fail) {
@@ -785,8 +774,6 @@ function prepareReport(report) {
         var eventRow = eventRows[i];
         var event = report.events[i];
         if(eventRow.hasImage) {
-            //var file = eventRow.photoPicker.prop("files")[0];
-            //var file = eventRow.photoElement.attr('src');
             var desc = eventRow.descElement.val();
             event.desc = desc;
             var license = eventRow.licenseSelect.find("option:selected").val();
@@ -956,7 +943,6 @@ function initUI() {
     }
     btnUpload = $("#btnUpload");
     btnUpload.on("click", btnUploadPressed);
-    //photoPicker = $('#photoPicker');
     editPopup = $("#editPopup");    
     //editPopup.popup( "option", "transition", "pop" );
     imgPopup = $("#imgPopup");    

@@ -48,6 +48,9 @@
         }
     },
     "installed_plugins": {
+        "com.dvdbrink.cordova.indexeddb": {
+            "PACKAGE_NAME": "com.mobile"
+        },
         "org.apache.cordova.camera": {
             "PACKAGE_NAME": "com.mobile"
         },
