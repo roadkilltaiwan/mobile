@@ -9,4 +9,6 @@
     </author>
     <content src="post2.html" />
     <access origin="*" />
+    <preference name="AndroidPersistentFileLocation" value="Internal" />
+    <preference name="iosPersistentFileLocation" value="Library" />
 </widget>

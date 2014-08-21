@@ -116,9 +116,21 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.photoElement.on("click", $.proxy(this.photoPressed, this));
     this.photoElement.on("load", $.proxy(this.photoLoaded, this));
     this.descElement = this.rowElement.find(".photoDesc");
+    this.descElement.on("change", $.proxy(function() {
+        this.event.desc = this.descElement.val();
+        this.updateEvent();
+    }, this));
     this.locationElement = this.rowElement.find(".location");
     this.licenseSelect = $("#select-cc");
+    this.licenseSelect.on("change", $.proxy(function() {
+        this.event.license = this.licenseSelect.find('option:selected').val();
+        this.updateEvent();
+    }, this));
     this.fbPostIdSelect = $("#select-fbPostId");
+    this.fbPostIdSelect.on("change", $.proxy(function() {
+        this.event.fbPostId = this.fbPostIdSelect.find('option:selected').val();
+        this.updateEvent();
+    }, this));
     this.btnEdit = this.rowElement.find(".btnEdit");
     this.btnEdit.on("click", $.proxy(this.btnEditPressed, this));
     this.rowNumber = rowNumber;
@@ -137,7 +149,12 @@ RkEventRow.prototype.photoPickerChanged = function(event) {
     }
 };
 */
-
+RkEventRow.prototype.updateEvent = function() {
+    try {
+        localStorage.setItem('rkevents', JSON.stringify(rkreport.events));
+        alert(localStorage.rkevents);
+    } catch(err) {alert(err);}
+}
 RkEventRow.prototype.updateLocation = function() {
     mapView.delegate = this;
     mapView.show({location: this.event.location, address: {longaddress: this.event.address, shortaddress: this.event.shortAddress}, time: new Date(this.event.time)});
@@ -147,6 +164,7 @@ RkEventRow.prototype.handleAddress = function(address) {
     this.event.address = address.longaddress;
     this.event.shortAddress = address.shortaddress;
     this.locationElement.html(address.shortaddress);
+    this.updateEvent();
     hidePageBusy();
 };
 
@@ -195,9 +213,9 @@ RkEventRow.prototype.retakePhoto = function() {
     this.clear();
 };
 
-RkEventRow.prototype.displayPhoto = function(imgURI/*file*/, rotation) {
+RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
     //var baseurl = window.URL ? window.URL : window.webkitURL;
-    var imgSrc = imgURI;//baseurl.createObjectURL(file);
+    //var imgSrc = baseurl.createObjectURL(blob);
     this.photoElement.attr("src", imgSrc);
     
     var transform = "rotate(" + rotation + "deg)";
@@ -231,7 +249,7 @@ RkEventRow.prototype.photoPickerChanged = function(event) {
     var file = event.target.files[0];
     this.hasImage = true;
     this.event.time = new Date().getTime();
-    this.event.photoFile = file;
+    this.event.photoURL = file;
     photoRow.displayPhoto(file, 0);
     sharedLocationManager.getLocation();
 };
@@ -240,18 +258,16 @@ RkEventRow.prototype.photoPickerChanged = function(event) {
 
 //RkEventRow.prototype.photoPickerChanged = function(/*event*/imgData) {
 RkEventRow.prototype.photoLoaded = function() {
-    if(!this.hasImage) {
+    if(!this.hasImage || this.event.time!==null) {
         return;
     }
     var img = this.photoElement.get(0);
-    this.event.photoFile = img;
     this.event.time = new Date().getTime();
     EXIF.getData(img, $.proxy(function() {
         var foundLocationInPhoto = false;
         if (img.exifdata) {
             var exifData = null;
             try {
-                console.log(img.exifdata);
                 exifData = parseExif(img.exifdata);
             }
             catch(err) {
@@ -313,6 +329,28 @@ RkEventRow.prototype.takePicture = function() {
             $.proxy(function(imgURI) {
                 this.displayPhoto(imgURI);
                 this.hasImage = true;
+                var that = this;
+                function copy(cwd, src, dest) {
+                    window.resolveLocalFileSystemURL(src, function(fileEntry) {
+                        cwd.getDirectory(dest, {}, function(dirEntry) {
+                            fileEntry.copyTo(dirEntry, 'image.jpg',
+                                function(f) {
+                                    that.event.photoURL = f.toURL();
+                                    that.updateEvent();
+                                }
+                            );
+                        }, errorHandler);
+                    }, errorHandler);
+                }
+                var errorHandler = function(err) {
+                    alert(JSON.stringify(err));
+                };
+                window.requestFileSystem(window.TEMPORARY, 1024*1024,
+                    function(fs) {
+                        copy(fs.root, imgURI, '');
+                    },
+                    errorHandler
+                );
             }, this),
             function(msg) {
                 alert("Camera Failed: "+msg);
@@ -337,7 +375,7 @@ RkEventRow.prototype.photoPressed = function(event) {
 };
 
 function RkEvent() {
-    this.photoFile = null;
+    this.photoURL = null;
     this.time = null;
     this.location = null;
     this.desc = null;   
@@ -348,7 +386,7 @@ function RkEvent() {
 }
 
 RkEvent.prototype.clear = function() {
-    this.photoFile = null;
+    this.photoURL = null;
     this.time = null;
     this.location = null;
     this.desc = null;   
@@ -371,7 +409,7 @@ RkReport.prototype.createEvent = function(address) {
 RkReport.prototype.validEvents = function() {
     var list = [];
     for(var i=0; i<this.events.length; i++) {
-        if(this.events[i].photoFile!=null) {
+        if(this.events[i].photoURL!=null) {
             list.push(this.events[i]);
         }
     }
@@ -381,7 +419,7 @@ RkReport.prototype.validEvents = function() {
 RkReport.prototype.validEventCount = function() {
     var count = 0;
     for(var i=0; i<this.events.length; i++) {
-        if(this.events[i].photoFile!=null) {
+        if(this.events[i].photoURL!=null) {
             count++;
         }
     }
@@ -684,23 +722,18 @@ function viewWidth() {
 
 function upload(ev, done, fail) {
     //var ev = events[0];
-    var xhr = new XMLHttpRequest();
-    var reader = new FileReader();
-    xhr.open('GET', ev.photoFile.src, true);
-    xhr.responseType = 'blob';
-    xhr.onload = function() {
-        if (this.status == 200) {
-            var myBlob = this.response;
-            // myBlob is now the blob that the object URL pointed to.
-            reader.onload = function () {
-                ev.photoFile = this.result.replace(/data:\S*;base64,/, '');
+    window.resolveLocalFileSystemURL(ev.photoURL, function(fileEntry) {
+        fileEntry.file(function(file) {
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                var base64 = this.result.replace(/data:\S*;base64,/, '');
                 $.ajax({
                     url: "http://roadkill.tw/phone/drupalgap/file",
                     type: "POST",
                     dataType: "json",
                     data: {
                         "file": {
-                            "file": ev.photoFile,
+                            "file": base64,
                             "filename": "image.jpg",
                             "uid": localStorage.getItem("uid")
                         }
@@ -715,49 +748,47 @@ function upload(ev, done, fail) {
                         var sDate = new Date(ev.time);
 
                         var getter = new XMLHttpRequest();
-getter.onreadystatechange = function () {
-  console.log(this.status);
-  if (this.readyState == 4 && this.status == 200) {
-    var form = this.responseXML.getElementById('node-form');
-    form['field_imagefield[0][fid]'].value = result.fid;
-    //formData.append("files[field_imagefield_0]");
-    form['title'].value = '['+ev.shortAddress+'] '+sDate;
-    form['body'].value = ev.desc;
-    form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-    form['field_data_res[value]'][1].checked = true;
-    form['field_location_img[0][name]'].value = ev.address;
-    form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-    form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-    form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(sDate.toISOString())[0];
-    form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-    form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
-    form['status'].value = 1;
-    form['promote'].value = 1;
-    
-    var request = new XMLHttpRequest();
-    request.open('POST', 'http://roadkill.tw/phone/node/add/image');
-    request.onload = function () {
-      done();
-    }
-    request.send(new FormData(form));
-  }
-}
-getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
-getter.responseType = 'document';
-getter.send();
+        getter.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+        var form = this.responseXML.getElementById('node-form');
+        form['field_imagefield[0][fid]'].value = result.fid;
+        //formData.append("files[field_imagefield_0]");
+        form['title'].value = '['+ev.shortAddress+'] '+sDate;
+        form['body'].value = ev.desc;
+        form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+        form['field_data_res[value]'][1].checked = true;
+        form['field_location_img[0][name]'].value = ev.address;
+        form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+        form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+        form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(sDate.toISOString())[0];
+        form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+        form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
+        form['status'].value = 1;
+        form['promote'].value = 1;
+
+        var request = new XMLHttpRequest();
+        request.open('POST', 'http://roadkill.tw/phone/node/add/image');
+        request.onload = function () {
+        done();
+        }
+        request.send(new FormData(form));
+        }
+        }
+        getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
+        getter.responseType = 'document';
+        getter.send();
                     },
                     error: function(err){
-alert(JSON.stringify(err));
+                        alert(JSON.stringify(err));
                         fail();
                         console.log(err);
                     }
                 });
 
             };
-            reader.readAsDataURL(myBlob);
-        }
-    };
-    xhr.send();
+            reader.readAsDataURL(file);
+        });
+    });
 }
 
 function clearReport(report) {
@@ -783,24 +814,6 @@ function prepareReport(report) {
         }
     }
     return null;
-}
-
-function setBase64FromURL(event, url) {
-    var xhr = new XMLHttpRequest();
-    var reader = new FileReader();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'blob';
-    xhr.onload = function() {
-        if (this.status == 200) {
-            var myBlob = this.response;
-            // myBlob is now the blob that the object URL pointed to.
-            reader.onload = function (e) {
-                event.photoFile = e.target.result.replace(/data:\S*;base64,/, '');
-            };
-            reader.readAsDataURL(myBlob);
-        }
-    };
-    xhr.send();
 }
 
 function validateEvents(events) {
@@ -835,7 +848,7 @@ function btnUploadPressed(event, ui) {
         alert(UPLOAD_FAILED);
     };
     
-    prepareReport(rkreport);
+    //prepareReport(rkreport);
     var events = rkreport.validEvents();
     var error = validateEvents(events);
     if(error!=null) {
@@ -951,8 +964,32 @@ function initUI() {
     var elements = $("[id=eventRow]");
     for(var row=0; row<elements.length; row++) {
         var element = elements[row];
-        var rkevent = rkreport.createEvent();
+        var rkevent = rkreport.events[row] || rkreport.createEvent();
         var newRow = new RkEventRow(row, element, rkevent);
+        if(rkevent.shortAddress) {
+            newRow.locationElement.html(rkevent.shortAddress);
+        }
+        if(rkevent.photoURL) {
+            newRow.displayPhoto(rkevent.photoURL);
+            newRow.hasImage = true;
+        }
+        if(rkevent.desc) {
+            newRow.descElement.html(rkevent.desc);
+        }
+        if(rkevent.license!==null) {
+            newRow.licenseSelect.find('option').filter(function() {
+                return $(this).val()==rkevent.license;
+            }).prop('selected', true);
+            newRow.licenseSelect.selectmenu('refresh');
+        }else {
+            newRow.event.license = ""; //[TODO] Init from user default
+        }
+        if(rkevent.fbPostId!==null) {
+            newRow.fbPostIdSelect[0].selectedIndex = rkevent.fbPostId;
+            newRow.fbPostIdSelect.selectmenu('refresh');
+        }else {
+            newRow.event.fbPostId = 0; //[TODO] Init from user default
+        }
         eventRows.push(newRow);
     }
     
@@ -964,8 +1001,20 @@ function initModels() {
     if(rkreport!=null) {
         return;
     }
-    // [TODO] Load previous progress here
     rkreport = new RkReport();
+    var rkStr = localStorage.getItem('rkevents');
+    if(rkStr) {
+        var rec = JSON.parse(rkStr);
+        rec.forEach(function(ev, i, arr) {
+            var rkEv = rkreport.createEvent();
+            for(var key in ev) {
+                if (ev.hasOwnProperty(key)) {
+                    rkEv[key] = ev[key];
+                }
+            }
+        });
+        console.log('Loaded: '+rkStr);
+    }
 }
 
 function initGmap(event, ui) {

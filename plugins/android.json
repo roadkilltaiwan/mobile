@@ -13,6 +13,14 @@
                             "count": 1
                         },
                         {
+                            "xml": "<feature name=\"File\"><param name=\"android-package\" value=\"org.apache.cordova.file.FileUtils\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"FileTransfer\"><param name=\"android-package\" value=\"org.apache.cordova.filetransfer.FileTransfer\" /></feature>",
+                            "count": 1
+                        },
+                        {
                             "xml": "<feature name=\"InAppBrowser\"><param name=\"android-package\" value=\"org.apache.cordova.inappbrowser.InAppBrowser\" /></feature>",
                             "count": 1
                         },
@@ -28,7 +36,7 @@
                     "/*": [
                         {
                             "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
-                            "count": 1
+                            "count": 3
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />",
@@ -48,10 +56,13 @@
         }
     },
     "installed_plugins": {
-        "com.dvdbrink.cordova.indexeddb": {
+        "org.apache.cordova.camera": {
             "PACKAGE_NAME": "com.mobile"
         },
-        "org.apache.cordova.camera": {
+        "org.apache.cordova.file": {
+            "PACKAGE_NAME": "com.mobile"
+        },
+        "org.apache.cordova.file-transfer": {
             "PACKAGE_NAME": "com.mobile"
         },
         "org.apache.cordova.geolocation": {

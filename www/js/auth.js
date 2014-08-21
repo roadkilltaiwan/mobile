@@ -105,6 +105,7 @@ var rkAuth = {
         );
     },
     "isOnline": function() {
+        if(!navigator.connection) return navigator.onLine;
         try {
             var networkState = navigator.connection.type;
             var states = {};
