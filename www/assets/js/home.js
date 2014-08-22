@@ -211,6 +211,8 @@ RkEventRow.prototype.retakePhoto = function() {
     }, this));
     editPopup.popup("close");
     this.clear();
+    this.event.clear();
+    this.updateEvent();
 };
 
 RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
@@ -333,7 +335,8 @@ RkEventRow.prototype.takePicture = function() {
                 function copy(cwd, src, dest) {
                     window.resolveLocalFileSystemURL(src, function(fileEntry) {
                         cwd.getDirectory(dest, {}, function(dirEntry) {
-                            fileEntry.copyTo(dirEntry, 'image.jpg',
+                            fileEntry.copyTo(dirEntry,
+                                'image'+that.rowNumber+'.jpg',
                                 function(f) {
                                     that.event.photoURL = f.toURL();
                                     that.updateEvent();
@@ -720,75 +723,74 @@ function viewWidth() {
     return $(window).width() - 40;
 }
 
-function upload(ev, done, fail) {
-    //var ev = events[0];
-    window.resolveLocalFileSystemURL(ev.photoURL, function(fileEntry) {
-        fileEntry.file(function(file) {
-            var reader = new FileReader();
-            reader.onloadend = function () {
-                var base64 = this.result.replace(/data:\S*;base64,/, '');
-                $.ajax({
-                    url: "http://roadkill.tw/phone/drupalgap/file",
-                    type: "POST",
-                    dataType: "json",
-                    data: {
-                        "file": {
-                            "file": base64,
-                            "filename": "image.jpg",
-                            "uid": localStorage.getItem("uid")
-                        }
-                    },
-                    beforeSend: function (xhr){
-                        xhr.setRequestHeader('X-CSRF-Token', 
-                                            rkAuth.db.CSRF_token);
-                        xhr.setRequestHeader('Content-type',
-                                            'application/x-www-form-urlencoded');
-                    },
-                    success: function(result) {
-                        var sDate = new Date(ev.time);
-
-                        var getter = new XMLHttpRequest();
-        getter.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-        var form = this.responseXML.getElementById('node-form');
-        form['field_imagefield[0][fid]'].value = result.fid;
-        //formData.append("files[field_imagefield_0]");
-        form['title'].value = '['+ev.shortAddress+'] '+sDate;
-        form['body'].value = ev.desc;
-        form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-        form['field_data_res[value]'][1].checked = true;
-        form['field_location_img[0][name]'].value = ev.address;
-        form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-        form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-        form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(sDate.toISOString())[0];
-        form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-        form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
-        form['status'].value = 1;
-        form['promote'].value = 1;
-
-        var request = new XMLHttpRequest();
-        request.open('POST', 'http://roadkill.tw/phone/node/add/image');
-        request.onload = function () {
-        done();
-        }
-        request.send(new FormData(form));
-        }
-        }
-        getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
-        getter.responseType = 'document';
-        getter.send();
-                    },
-                    error: function(err){
-                        alert(JSON.stringify(err));
-                        fail();
-                        console.log(err);
-                    }
-                });
-
-            };
-            reader.readAsDataURL(file);
+function upload(events, done, fail) {
+  //var ev = events[0];
+  var getter = new XMLHttpRequest();
+  getter.onreadystatechange = function () {
+    if (this.readyState != 4 || this.status != 200) return ;
+    var form = this.responseXML.getElementById('node-form');
+    var counter = events.length;
+    events.forEach(function(ev, i, arr) {
+      window.resolveLocalFileSystemURL(ev.photoURL, function (fileEntry) {
+        fileEntry.file(function (file) {
+          var reader = new FileReader();
+          reader.onloadend = function () {
+            var base64 = this.result.replace(/data:\S*;base64,/, '');
+            $.ajax({
+              url: 'http://roadkill.tw/phone/drupalgap/file',
+              type: 'POST',
+              dataType: 'json',
+              data: {
+                'file': {
+                  'file': base64,
+                  'filename': 'image.jpg',
+                  'uid': localStorage.getItem('uid')
+                }
+              },
+              beforeSend: function (xhr) {
+                xhr.setRequestHeader('X-CSRF-Token', rkAuth.db.CSRF_token);
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+              },
+              success: function (result) {
+                var sDate = new Date(ev.time);
+                form['field_imagefield[0][fid]'].value = result.fid;
+                //formData.append("files[field_imagefield_0]");
+                form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
+                form['body'].value = ev.desc;
+                form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+                form['field_data_res[value]'][1].checked = true;
+                form['field_location_img[0][name]'].value = ev.address;
+                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(sDate.toISOString()) [0];
+                form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+                form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
+                form['status'].value = 1;
+                form['promote'].value = 1;
+                var request = new XMLHttpRequest();
+                request.open('POST', 'http://roadkill.tw/phone/node/add/image');
+                request.onload = function () {
+                  counter--;
+                  if(counter==0) done();
+                };
+                request.send(new FormData(form));
+                //request.send(formData);
+              },
+              error: function (err) {
+                alert(JSON.stringify(err));
+                fail();
+                console.log(err);
+              }
+            });
+          };
+          reader.readAsDataURL(file);
         });
+      });
     });
+  };
+  getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
+  getter.responseType = 'document';
+  getter.send();
 }
 
 function clearReport(report) {
@@ -798,6 +800,7 @@ function clearReport(report) {
         eventRow.clear();
         event.clear();
     }
+    localStorage.removeItem('rkevents');
 }
 
 function prepareReport(report) {
@@ -837,7 +840,6 @@ function btnUploadPressed(event, ui) {
         alert(PHOTO_UNAVAILABLE);
         return;
     }
-    
     var done = function(resp) {
         clearReport(rkreport);
         hidePageBusy();
@@ -886,9 +888,7 @@ function btnUploadPressed(event, ui) {
                                 alert("請重新授權發文，或變更發佈設定");
                             }else {
                                 showPageBusy(UPLOADING);
-                                events.forEach(function(ev, i, arr) {
-                                    upload(ev, done, fail);
-                                });
+                                upload(events, done, fail);
                             }
                         },
                         "error": function(error) {
@@ -906,9 +906,7 @@ function btnUploadPressed(event, ui) {
             );
         } else {
             showPageBusy(UPLOADING);
-            events.forEach(function(ev, i, arr) {
-                upload(ev, done, fail);
-            });
+            upload(events, done, fail);
         }
     };
     var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
@@ -925,9 +923,7 @@ function btnUploadPressed(event, ui) {
         });
     }else {
         showPageBusy(UPLOADING);
-        events.forEach(function(ev, i, arr) {
-            upload(ev, done, fail);
-        }); 
+        upload(events, done, fail);
     }
 }
 
@@ -982,13 +978,13 @@ function initUI() {
             }).prop('selected', true);
             newRow.licenseSelect.selectmenu('refresh');
         }else {
-            newRow.event.license = ""; //[TODO] Init from user default
+            //newRow.event.license = ""; //[TODO] Init from user default
         }
         if(rkevent.fbPostId!==null) {
             newRow.fbPostIdSelect[0].selectedIndex = rkevent.fbPostId;
             newRow.fbPostIdSelect.selectmenu('refresh');
         }else {
-            newRow.event.fbPostId = 0; //[TODO] Init from user default
+            //newRow.event.fbPostId = 0; //[TODO] Init from user default
         }
         eventRows.push(newRow);
     }
