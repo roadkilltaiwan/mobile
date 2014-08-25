@@ -397,6 +397,7 @@ RkEvent.prototype.clear = function() {
     this.shortAddress = null;
     this.license = null;
     this.fbPostId = null;
+// [TODO] Remove photo file here
 };
 
 function RkReport() {
@@ -798,6 +799,7 @@ function clearReport(report) {
         var eventRow = eventRows[i];
         var event = report.events[i];
         eventRow.clear();
+        rkView.add(event);
         event.clear();
     }
     localStorage.removeItem('rkevents');

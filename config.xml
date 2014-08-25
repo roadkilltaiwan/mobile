@@ -7,7 +7,7 @@
     <author email="cookiej4u@iis.sinica.edu.tw" href="http://roadkill.tw">
         IIS Sinica
     </author>
-    <content src="post2.html" />
+    <content src="post.html" />
     <access origin="*" />
     <preference name="AndroidPersistentFileLocation" value="Internal" />
     <preference name="iosPersistentFileLocation" value="Library" />
