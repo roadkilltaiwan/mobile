@@ -758,12 +758,14 @@ function upload(events, done, fail) {
                 //formData.append("files[field_imagefield_0]");
                 form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
                 form['body'].value = ev.desc;
+try{
                 form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+}catch(err) {alert(err + ', '+i+'/'+events.length+': '+ev.fbPostId);}
                 form['field_data_res[value]'][1].checked = true;
                 form['field_location_img[0][name]'].value = ev.address;
                 form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
                 form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(sDate.toISOString()) [0];
+                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
                 form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
                 form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
                 form['status'].value = 1;
@@ -799,7 +801,10 @@ function clearReport(report) {
         var eventRow = eventRows[i];
         var event = report.events[i];
         eventRow.clear();
-        rkView.add(event);
+        if(event.photoURL) {
+            rkView.add(event);
+            console.log(JSON.stringify(rkView.getView()));
+        }
         event.clear();
     }
     localStorage.removeItem('rkevents');
@@ -919,8 +924,10 @@ function btnUploadPressed(event, ui) {
             "error": function(error) {
                 if(error.code==190) { //invalid access token
                     permissionHandler({data:[]});
+                }else {
+                    console.log('failed to connect Facebook: ' + error.message);
+                    fail();
                 }
-                else alert('failed to connect Facebook: ' + error.message);
             }
         });
     }else {
@@ -1013,6 +1020,7 @@ function initModels() {
         });
         console.log('Loaded: '+rkStr);
     }
+    console.log(JSON.stringify(rkView.getView(100)));
 }
 
 function initGmap(event, ui) {
