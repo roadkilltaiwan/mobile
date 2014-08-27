@@ -260,9 +260,13 @@ RkEventRow.prototype.photoPickerChanged = function(event) {
 
 //RkEventRow.prototype.photoPickerChanged = function(/*event*/imgData) {
 RkEventRow.prototype.photoLoaded = function() {
-    if(!this.hasImage || this.event.time!==null) {
+    if(!this.hasImage || this.event.address!==null) {
+        return;
+    }else if(this.location) {
+        sharedLocationManager.getAddress(this.location.latitude, this.location.longitude, this);
         return;
     }
+
     var img = this.photoElement.get(0);
     this.event.time = new Date().getTime();
     EXIF.getData(img, $.proxy(function() {
@@ -329,15 +333,15 @@ RkEventRow.prototype.takePicture = function() {
         };
         navigator.camera.getPicture(
             $.proxy(function(imgURI) {
-                this.displayPhoto(imgURI);
                 this.hasImage = true;
                 var that = this;
                 function copy(cwd, src, dest) {
                     window.resolveLocalFileSystemURL(src, function(fileEntry) {
                         cwd.getDirectory(dest, {}, function(dirEntry) {
                             fileEntry.copyTo(dirEntry,
-                                'image'+that.rowNumber+'.jpg',
+                                'image_'+(new Date().getTime())+'.jpg',
                                 function(f) {
+                                    that.displayPhoto(f.toURL());
                                     that.event.photoURL = f.toURL();
                                     that.updateEvent();
                                 }
@@ -346,7 +350,7 @@ RkEventRow.prototype.takePicture = function() {
                     }, errorHandler);
                 }
                 var errorHandler = function(err) {
-                    alert(JSON.stringify(err));
+                    console.log(JSON.stringify(err));
                 };
                 window.requestFileSystem(window.TEMPORARY, 1024*1024,
                     function(fs) {
@@ -1020,7 +1024,6 @@ function initModels() {
         });
         console.log('Loaded: '+rkStr);
     }
-    console.log(JSON.stringify(rkView.getView(100)));
 }
 
 function initGmap(event, ui) {

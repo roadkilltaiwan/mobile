@@ -39,23 +39,37 @@ var rkView = (function() {
     };
 })();
 
-$(document).on("pagebeforeshow","#view",function(){
+$(document).on("pagebeforeshow", "#view", function(){
     var myView = rkView.getView();
-    var container = $('#csfilter');
-    var csPtr = container.children('li:first').clone();
-    container.append(csPtr);
+    var container = $('#view #csfilter');
+    var csRef = $('<div data-role="collapsible"><h3></h3><ul data-role="listview"></ul></div>');
+    var csPtr = csRef;
     myView.forEach(function(ev, i, arr) {
-        var csDate = csPtr.children('#csdate').html();
-        var evDate = new Date(rkView.index[i]).toDateString();
+        var csDate = csPtr.children('h3').html();
+        var evDate = new Date(rkView.index[i]).toLocaleDateString();
         if(csDate!==evDate) {
-            csPtr = csPtr.clone();
-            csPtr.children('#csdate').html(evDate);
+            csPtr = csRef.clone().appendTo(container);
             csPtr.attr('data-filtertext', evDate);
-            container.append(csPtr);
+            csPtr.children('h3').html(evDate);
         }
         //create a li of this ev;
-        var list = document.createElement('li');
-        var img = document.createElement('img');
+        var key = ev.shortAddress+' '+ev.desc;
+        var list = $('<li data-filtertext="'+evDate+' '+key+
+                    '"><img src="'+ev.photoURL+'"></img>'+
+                    '<h4>['+ev.shortAddress+']</h4><p>'+ev.desc+' - 攝於'+
+                    new Date(ev.time).toLocaleDateString()+'</p></li>');
         //append to the bottom of the ul in container;
+        csPtr.children('[data-role="listview"]').append(list);
+        csPtr.attr('data-filtertext', csPtr.attr('data-filtertext')+' '+key);
     });
+    /*container.find('div ul').each(function() {
+        $(this).listview();
+    });*/
+    //container.collapsibleset("refresh");
+    container.children(':first').attr('data-collapsed', 'false');
+    container.trigger('create');
+});
+
+$(document).on("pagebeforehide", "#view", function(){
+    $('#view #csfilter').empty();
 });
