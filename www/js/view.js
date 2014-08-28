@@ -55,7 +55,7 @@ $(document).on("pagebeforeshow", "#view", function(){
         //create a li of this ev;
         var key = ev.shortAddress+' '+ev.desc;
         var list = $('<li data-filtertext="'+evDate+' '+key+
-                    '"><img src="'+ev.photoURL+'"></img>'+
+                    '"><img class="vcenter" src="'+ev.photoURL+'"></img>'+
                     '<h4>['+ev.shortAddress+']</h4><p>'+ev.desc+' - 攝於'+
                     new Date(ev.time).toLocaleDateString()+'</p></li>');
         //append to the bottom of the ul in container;

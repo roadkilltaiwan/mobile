@@ -6,4 +6,7 @@
   height: 60px;
   margin: 20px 0px 10px 0px;  
 }
-
+img.photo {
+  padding: .5em;
+  max-width: 80px;
+}

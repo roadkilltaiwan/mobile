@@ -139,16 +139,6 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.hasImage = false;
 }
 
-/*
-RkEventRow.prototype.photoPickerChanged = function(event) {
-    var file = event.target.files[0];
-    if(file!=null) {
-        this.displayPhoto(file, 0);
-        this.getLocation(true);
-        this.hasImage = true;
-    }
-};
-*/
 RkEventRow.prototype.updateEvent = function() {
     try {
         localStorage.setItem('rkevents', JSON.stringify(rkreport.events));
@@ -228,37 +218,6 @@ RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
     //hidePageBusy();
 };
 
-/*
-RkEventRow.prototype.photoLoaded = function(event) {
-    if(!this.hasImage) return;
-    var img = this.photoElement[0];
-    EXIF.getData(img, function() {
-        var lat = EXIF.getTag(img, "GPSLatitude");
-        //alert(EXIF.pretty(img));
-    });
-};
-*/
-
-/*
-RkEventRow.prototype.photoPickerChanged = function(event) {
-    if(event.target.files.length==0) {
-        return;
-    }
-    
-    showPageBusy("處理中...");
-    var photoRow = this;
-    var originalPhotoElement = this.photoElement;
-    var file = event.target.files[0];
-    this.hasImage = true;
-    this.event.time = new Date().getTime();
-    this.event.photoURL = file;
-    photoRow.displayPhoto(file, 0);
-    sharedLocationManager.getLocation();
-};
-*/
-
-
-//RkEventRow.prototype.photoPickerChanged = function(/*event*/imgData) {
 RkEventRow.prototype.photoLoaded = function() {
     if(!this.hasImage || this.event.address!==null) {
         return;
@@ -293,7 +252,6 @@ RkEventRow.prototype.photoLoaded = function() {
         if(!foundLocationInPhoto) {
             sharedLocationManager.getLocation(this);
         }
-        //hidePageBusy();
     }, this));
 };
 
@@ -364,7 +322,6 @@ RkEventRow.prototype.takePicture = function() {
             },
             option
         );
-        //showPageBusy(PROCESSING);
     }, this));
     imgPopup.popup("open");
 };
@@ -729,7 +686,6 @@ function viewWidth() {
 }
 
 function upload(events, done, fail) {
-  //var ev = events[0];
   var getter = new XMLHttpRequest();
   getter.onreadystatechange = function () {
     if (this.readyState != 4 || this.status != 200) return ;
@@ -759,12 +715,11 @@ function upload(events, done, fail) {
               success: function (result) {
                 var sDate = new Date(ev.time);
                 form['field_imagefield[0][fid]'].value = result.fid;
+                //[TODO] file input form post
                 //formData.append("files[field_imagefield_0]");
                 form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
                 form['body'].value = ev.desc;
-try{
                 form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-}catch(err) {alert(err + ', '+i+'/'+events.length+': '+ev.fbPostId);}
                 form['field_data_res[value]'][1].checked = true;
                 form['field_location_img[0][name]'].value = ev.address;
                 form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
@@ -861,7 +816,7 @@ function btnUploadPressed(event, ui) {
         alert(UPLOAD_FAILED);
     };
     
-    //prepareReport(rkreport);
+    prepareReport(rkreport);
     var events = rkreport.validEvents();
     var error = validateEvents(events);
     if(error!=null) {
@@ -969,7 +924,6 @@ function initUI() {
     //editPopup.popup( "option", "transition", "pop" );
     imgPopup = $("#imgPopup");    
     //imgPopup.popup( "option", "transition", "pop" );
-    $('#bottomContainer').bottom();
     var elements = $("[id=eventRow]");
     for(var row=0; row<elements.length; row++) {
         var element = elements[row];
