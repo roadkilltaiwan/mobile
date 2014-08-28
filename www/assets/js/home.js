@@ -173,7 +173,7 @@ RkEventRow.prototype.handleLocationError = function(error) {
     hidePageBusy();
     if(error.code==LocationManager.PERMISSION_DENIED) {
         alert(LOCATION_SERVICE_DENIED);
-    }
+    }else console.log(error.code+': '+error.message);
 };
 
 RkEventRow.prototype.deletePhoto = function() {
@@ -221,7 +221,10 @@ RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
 RkEventRow.prototype.photoLoaded = function() {
     if(!this.hasImage || this.event.address!==null) {
         return;
-    }else if(this.location) {
+    }
+    if(this.location && this.location.latitude && this.location.longitude) {
+        alert("resume previous geolocation parsing: \n"
+            +JSON.stringify(this.location));
         sharedLocationManager.getAddress(this.location.latitude, this.location.longitude, this);
         return;
     }
@@ -625,7 +628,8 @@ function parseExif(exif) {
 }
 
 function parseGeocodingResult(response) {
-    var country, city = null, locality = null, sublocality = null, route;
+    var country = null, city = null, locality = null, sublocality = null,
+        route = null, poi = null;
     var found = false;
     for(var r in response.results) {
         var result = response.results[r];
@@ -634,11 +638,12 @@ function parseGeocodingResult(response) {
             var types = addressComponent.types;
             for(var t in types) {
                 var type = types[t];
-                if (city==null && type=="administrative_area_level_2") {
+                if (city==null && (type=="administrative_area_level_2" ||
+                    type=="administrative_area_level_1")) { //e.g. Taipei,Tainan
                     city = addressComponent.long_name;
                     break;
                 }
-                else if (locality==null && type=="locality") {
+                else if (locality==null && type=="administrative_area_level_3") {
                     locality = addressComponent.long_name;
                     break;
                 }
@@ -651,6 +656,9 @@ function parseGeocodingResult(response) {
                 }
                 else if (route==null && type=="route") {
                     route = addressComponent.short_name;
+                }
+                else if (poi==null && type=="point_of_interest") {
+                    poi = addressComponent.short_name;
                 }
             }
         }
@@ -669,6 +677,9 @@ function parseGeocodingResult(response) {
         }
         if (route!=null) {
             longAddress = longAddress + route;
+        }
+        if(poi!=null) {
+            longAddress += poi;
         }
         result.longaddress = longAddress;
     }
@@ -719,7 +730,9 @@ function upload(events, done, fail) {
                 //formData.append("files[field_imagefield_0]");
                 form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
                 form['body'].value = ev.desc;
+try{
                 form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+}catch(err) {alert(err + ', '+i+'/'+events.length+': '+ev.fbPostId);}
                 form['field_data_res[value]'][1].checked = true;
                 form['field_location_img[0][name]'].value = ev.address;
                 form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
@@ -943,13 +956,15 @@ function initUI() {
             newRow.licenseSelect.find('option').filter(function() {
                 return $(this).val()==rkevent.license;
             }).prop('selected', true);
-            newRow.licenseSelect.selectmenu('refresh');
+            //newRow.licenseSelect.selectmenu('refresh');
+            newRow.licenseSelect.trigger('create');
         }else {
             //newRow.event.license = ""; //[TODO] Init from user default
         }
         if(rkevent.fbPostId!==null) {
             newRow.fbPostIdSelect[0].selectedIndex = rkevent.fbPostId;
-            newRow.fbPostIdSelect.selectmenu('refresh');
+            //newRow.fbPostIdSelect.selectmenu('refresh');
+            newRow.fbPostIdSelect.trigger('create');
         }else {
             //newRow.event.fbPostId = 0; //[TODO] Init from user default
         }
