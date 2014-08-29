@@ -34,7 +34,9 @@ var app = {
     // function, we must explicity call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         //app.receivedEvent('deviceready');
-        if(!rkAuth.init()) {
+        if(!rkAuth.db.sessId) {
+            document.location.href = '#contract';
+        } else if(!rkAuth.init()) {
             document.location.href = '#logon';
         } else {
             document.location.href = '#home';
