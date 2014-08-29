@@ -3,7 +3,7 @@
 var LOCATION_SERVICE_TIMEOUT = 10000;
 var HTTP_REQUEST_TIMEOUT = 10000;
 var GOOGLE_MAPS_API_URL = "http://maps.googleapis.com/maps/api/geocode/json?language=zh-TW&sensor=true&latlng=";
-var CAMERA_IMAGE = "./assets/img/camera.png";
+var CAMERA_IMAGE = "./img/camera.png";
 var DEFAULT_MAP_CENTER = {lat: 23.97565, lng: 120.973882};
 var LOCATION_ERROR_MESSAGE = "無法定位";
 var LOCATION_SERVICE_INTERRUPTED = "請手動標記位置";
@@ -353,6 +353,7 @@ function RkEvent() {
 }
 
 RkEvent.prototype.clear = function() {
+var oldURL = this.photoURL;
     this.photoURL = null;
     this.time = null;
     this.location = null;
@@ -362,6 +363,11 @@ RkEvent.prototype.clear = function() {
     this.license = null;
     this.fbPostId = null;
 // [TODO] Remove photo file here
+/*window.resolveLocalFileSystemURL(oldURL, function(fileEntry) {
+    fileEntry.remove(function() {
+      console.log('File removed.');
+    }, function(err) { console.log('File removal error: '+err); });
+});*/
 };
 
 function RkReport() {

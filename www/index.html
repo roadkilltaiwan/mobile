@@ -1,224 +1,226 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>openFB Sample</title>
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
-    <link rel="stylesheet" href="ratchet.css">
-    <link rel="stylesheet" href="styles.css">
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script src="js/jquery-1.11.1.min.js"></script>
-    <script src="js/jquery.cookie.js"></script>
-    <script type="text/javascript" src="js/tool.js"></script>
-    <script src="cordova.js"></script>
-    <script src="openfb.js"></script>
+<title>Roadkill Report</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="./css/jquery.mobile-1.4.3.css">
+<script src="./js/jquery-2.1.1.min.js"></script>
+<script src="./js/jquery.mobile-1.4.3.js"></script>
+<link rel="stylesheet" media="screen" href="./css/home.css">
+<link rel="stylesheet" media="all" href="./css/application.css">
+<link rel="stylesheet" media="screen" href="./css/view.css">
+<script src="https://maps.googleapis.com/maps/api/js?language=zh-TW"></script>
+<script src="./js/binaryajax.js"></script>
+<script src="./js/exif.js"></script>
+<link rel="stylesheet" media="screen" href="./css/jtsage/jqm-datebox-1.4.2.css">
+<script src="./js/jtsage/jqm-datebox-1.4.2.core.js"></script>
+<script src="./js/jtsage/jqm-datebox-1.4.2.mode.calbox.js"></script>
+<script src="./js/jtsage/jqm-datebox-1.4.2.mode.datebox.js"></script>
+<script src="./js/jtsage/jquery.mobile.datebox.i18n.zh-TW.utf8.js"></script>
+<script src="./js/openfb.js"></script>
+<script src="cordova.js"></script>
+<script src="./js/auth.js"></script>
+<script src="./js/view.js"></script>
+<script src="./js/logon.js"></script>
+<script src="./js/setting.js"></script>
+<script src="./js/home.js"></script>
+<script src="./js/application.js"></script>
 </head>
+
 <body>
 
-<button id="loginBtn" class="btn btn-block" onclick="login()">Login with Facebook</button>
-<hr/>
+<div id="home" data-role="page">
+    <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
+        <h1>Roadkill Report!</h1>
+        <div role="navigation" class="ui-navbar" data-role="navbar">
+            <ul class="ui-grid-b">
+                <li class="ui-block-a"><a class="ui-link ui-btn ui-icon-grid ui-btn-icon-top" href="#view" data-icon="grid">歷史</a></li>
+                <li class="ui-block-b"><a class="ui-link ui-btn ui-icon-star ui-btn-icon-top ui-btn-active ui-state-persist" href="#home" data-icon="star">回報</a></li>
+                <li class="ui-block-c"><a class="ui-link ui-btn ui-icon-gear ui-btn-icon-top" href="#setting" data-icon="gear">設定</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="main" class="ui-content" data-theme="a">
+        <ul data-role="listview" data-split-theme="a" data-inset="true" >
+            <li id="eventRow" data-icon="edit">
+                <a href="#" data-rel="popup" data-position-to="window" data-transition="fade">
+                    <img src="./img/camera.png" id="photo" class="vcenter photo" alt="照片">
+                    <textarea id="photoDesc" class="simple-border photoDesc" placeholder="照片說明"></textarea>
+                    <div><p class="location"></p></div>
+                </a>
+                <a id="btnEdit" href="#" class="btnEdit" data-rel="popup" data-position-to="window" data-transition="pop">編輯</a>
+            </li>
+            <li id="eventRow" data-icon="edit">
+                <a href="#" data-rel="popup" data-position-to="window" data-transition="fade">
+                    <img src="./img/camera.png" id="photo" class="vcenter photo" alt="照片">
+                    <textarea id="photoDesc" class="simple-border photoDesc" placeholder="照片說明"></textarea>
+                    <div><p class="location"></p></div>
+                </a>
+                <a id="btnEdit" href="#" class="btnEdit" data-rel="popup" data-position-to="window" data-transition="pop">編輯</a>
+            </li>
+            <li id="eventRow" data-icon="edit">
+                <a href="#" data-rel="popup" data-position-to="window" data-transition="fade">
+                    <img src="./img/camera.png" id="photo" class="vcenter photo" alt="照片">
+                    <textarea id="photoDesc" class="simple-border photoDesc" placeholder="照片說明"></textarea>
+                    <div><p class="location"></p></div>
+                </a>
+                <a id="btnEdit" href="#" class="btnEdit" data-rel="popup" data-position-to="window" data-transition="pop">編輯</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div id="homeToolbar" data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
+        <div class="text-center" style="margin: 0 50% 0 50%;">
+            <a id="btnUpload" href="#" class="ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-shadow rounded-corner" style="padding: 20px 50px 20px 50px; margin: 0 -64px;">上傳</a>
+        </div>
+    </div>
 
-<p>Name: <span id="userName"></span></p>
-<button class="btn btn-block" onclick="getInfo()">Get My Info</button>
-<hr/>
+    <!-- popups -->
+    
+    <div id="editPopup" data-role="popup" data-theme="a" data-overlay-theme="b" class="ui-content" style="max-width:340px; padding: 35px;">
+        <p style="text-align: center" >對這個事件，你要...</p>
+        <ul data-role="listview" data-inset="true">
+            <li><a id="btnRetakePhoto" href="#">重拍一張照片</a></li>
+            <li><a id="btnUpdateLocation" href="#">標記日期與地點</a></li>
+        </ul>
+    </div>
+    <div id="imgPopup" data-role="popup" data-theme="a" data-overlay-theme="b" class="ui-content" style="max-width:340px; padding: 35px;">
+            <ul data-role="listview" data-inset="true">
+                <li><a id="CAMERA" class="ui-btn ui-icon-camera ui-btn-icon-left" href="#">拍攝新的照片</a></li>
+                <li><a id="PHOTOLIBRARY" class="ui-btn ui-icon-grid ui-btn-icon-left" href="#">從相簿中選取</a></li>
+            </ul>
+    </div>
+    
+    <!-- popups -->
 
-<button id="drupalBtn" class="btn btn-block" onclick="loginDrupal()">Login to drupal</button>
-<hr/>
+</div>
 
-<button id="drupalPostBtn" class="btn btn-block" onclick="postDrupal()">Post to drupal</button>
-<hr/>
+<div id="setting" data-role="page" data-theme="a">
+    <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
+        <h1>Roadkill Report!</h1>
+        <div role="navigation" class="ui-navbar" data-role="navbar">
+            <ul class="ui-grid-b">
+                <li class="ui-block-a"><a class="ui-link ui-btn ui-icon-grid ui-btn-icon-top" href="#view" data-icon="grid">歷史</a></li>
+                <li class="ui-block-b"><a class="ui-link ui-btn ui-icon-star ui-btn-icon-top" href="#home" data-icon="star">回報</a></li>
+                <li class="ui-block-c"><a class="ui-link ui-btn ui-icon-gear ui-btn-icon-top ui-btn-active ui-state-persist" href="#setting" data-icon="gear">設定</a></li>
+            </ul>
+        </div>
+    </div>
+    <ul data-role="listview" data-inset="true">
+        <li>
+            <label for="select-cc" class="select">我的內容授權為…</label>
+            <select name="select-cc" id="select-cc">
+                <option value="">(版權所有，保留所有權利)</option>
+                <optgroup label="創用 CC">
+                    <option value="http://creativecommons.org/licenses/by/3.0/tw/">
+                        姓名標示 3.0 台灣
+                    </option>
+                    <option value="http://creativecommons.org/licenses/by-sa/3.0/tw/">
+                        姓名標示-相同方式分享 3.0 台灣
+                    </option>
+                    <option value="http://creativecommons.org/licenses/by-nd/3.0/tw/">
+                        姓名標示-禁止改作 3.0 台灣
+                    </option>
+                    <option value="http://creativecommons.org/licenses/by-nc/3.0/tw/">
+                        姓名標示-非商業性 3.0 台灣
+                    </option>
+                    <option value="http://creativecommons.org/licenses/by-nc-sa/3.0/tw/">
+                        姓名標示-非商業性-相同方式分享 3.0 台灣
+                    </option>
+                    <option value="http://creativecommons.org/licenses/by-nc-nd/3.0/tw/">
+                        姓名標示-非商業性-禁止改作 3.0 台灣
+                    </option>
+                </optgroup>
+                <optgroup label="公眾領域分享授權條款（無任何著作保護）">
+                    <option value="http://creativecommons.org/publicdomain/mark/1.0/">
+                        公眾領域標章 1.0
+                    </option>
+                    <option value="http://creativecommons.org/publicdomain/zero/1.0/">
+                        CC0 1.0 通用
+                    </option>
+                </optgroup>
+            </select>
+        </li>
+        <li>
+            <label for="select-fbPostId" class="select">在路殺社臉書社團…</label>
+            <select name="select-fbPostId" id="select-fbPostId">
+                <option value="0">以個人帳號發佈</option>
+                <option value="1">以公用帳號發佈</option>
+                <option value="2">不公開發佈</option>
+            </select>
+        </li>
+    </ul>
+    <div data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
+        <div class="text-center" style="margin: 0 50% 0 50%;">
+            <a id="logout" href="#" class="ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-shadow rounded-corner" style="padding: 20px 50px 20px 50px; margin: 0 -64px;">登出</a>
+        </div>
+    </div>
+</div>
 
-<button class="btn btn-block" onclick="capturePhoto();">Capture Photo</button> <br>
-<!-- <button onclick="capturePhotoEdit();">Capture Editable Photo</button> <br> -->
-<button class="btn btn-block" onclick="getPhoto(pictureSource.PHOTOLIBRARY);">From Photo Library</button><br>
-<img style="display:none;width:60px;height:60px;" id="smallImage" src="" />
-<img style="display:none;" id="largeImage" src="" />
 
-<!-- <textarea id="Message" placeholder="What's on your mind?" rows="5"></textarea>
-<button class="btn btn-block" onclick="share()">Share</button>
-<hr/>
+<div id="logon" data-role="page">
+    <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
+        <h1>Roadkill Report!</h1>
+    </div>
+    <div data-role="main" class="ui-content" data-theme="a">
+        <img src="./img/logo.jpg" style="display: block; max-width: 70%; margin: auto;" />
+        <div class="ui-field-contain">
+            <form method="post">
+                <input type="text" id="username" placeholder="Username"/>
+                <input type="password" id="password" placeholder="Password"/>
+                <br />
+                <input type="submit" value="Login" id="login" data-icon="carat-r" data-iconpos="right" />
+            </form>
+        </div>
+    </div>
+</div> <!--login-->
 
-<button class="btn btn-block" onclick="revoke()">Revoke Permissions</button> -->
+<div id="map" data-role="page">
+    <div data-role="main" class="ui-content" data-theme="a" style="padding:0;">
+        <div id="gmapCanvas" style="width:100%;"></div>
+    </div>
+    <div id="mapToolbar" data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
+        <div><p id="selectedMapLocation" class="text-center"></p></div>
+        <div><p id="selectedDate" class="text-center"></p></div>
+        <div style="display: none;">
+            <input id="datePicker" type="date" data-role="datebox" data-options='{"mode": "calbox", "overrideDateFormat": "%Y/%m/%d", "beforeToday": true}'>
+        </div>
+        <div class="text-center" data-role="controlgroup" data-type="horizontal" style="padding: 10px 0 10px 0;">
+            <a id="btnConfirmLocation" href="#" class="ui-btn ui-corner-all ui-btn-icon-bottom ui-icon-check horizontal-controlgroup-large">確定</a>
+            <a id="btnPickDateTime" href="#" class="ui-btn ui-corner-all ui-btn-icon-bottom ui-icon-calendar horizontal-controlgroup-large">日期</a>
+            <a id="btnCancelMapView" href="#" class="ui-btn ui-corner-all ui-btn-icon-bottom ui-icon-delete horizontal-controlgroup-large">取消</a>
+        </div>
+    </div>
+</div>
 
-
-
+<div id="view" data-role="page">
+    <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
+        <h1>Roadkill Report!</h1>
+        <div role="navigation" class="ui-navbar" data-role="navbar">
+            <ul class="ui-grid-b">
+                <li class="ui-block-a"><a class="ui-link ui-btn ui-icon-grid ui-btn-icon-top ui-btn-active ui-state-persist" href="#view" data-icon="grid">歷史</a></li>
+                <li class="ui-block-b"><a class="ui-link ui-btn ui-icon-star ui-btn-icon-top" href="#home" data-icon="star">回報</a></li>
+                <li class="ui-block-c"><a class="ui-link ui-btn ui-icon-gear ui-btn-icon-top" href="#setting" data-icon="gear">設定</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="main" class="ui-content" data-theme="a">
+        <form>
+            <input data-type="search" id="searchRkView" placeholder="搜尋紀錄…">
+        </form>
+        <div data-role="collapsibleset" data-filter="true" data-children="> div, > div div ul li" data-inset="false" id="csfilter" data-input="#searchRkView">
+        </div>
+    </div>
+    <div data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
+        <div class="text-center" style="margin: 0 50% 0 50%;">
+            <a id="clearHistory" href="#" class="ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-shadow rounded-corner" style="padding: 20px 50px 20px 50px; margin: 0 -64px;">清除</a>
+        </div>
+    </div>
+</div>
 <script>
-    var pictureSource;   // picture source
-    var destinationType; // sets the format of returned value
-    openFB.init('305436449601720'); // Defaults to sessionStorage for storing the Facebook token
-
-//  Uncomment the line below to store the Facebook token in localStorage instead of sessionStorage
-    // openFB.init('305436449601720', 'http://localhost:8888/roadKillCamera/www/oauthcallback.html', window.localStorage);
-
-    function login() {
-        openFB.login('email',
-                function() {
-                    alert('Facebook login succeeded');
-                },
-                function(error) {
-                    alert('Facebook login failed: ' + error.error_description);
-                });
-    }
-
-    function getInfo() {
-        openFB.api({
-            path: '/me',
-            success: function(data) {
-                console.log(JSON.stringify(data));
-                document.getElementById("userName").innerHTML = data.name;
-            },
-            error: errorHandler});
-    }
-
-    function share() {
-        openFB.api({
-            method: 'POST',
-            path: '/me/feed',
-            params: {
-                message: 'Testing Facebook APIs'
-            },
-            success: function() {
-                alert('the item was posted on Facebook');
-            },
-            error: errorHandler});
-    }
-
-    function revoke() {
-        openFB.revokePermissions(
-                function() {
-                    alert('Permissions revoked');
-                },
-                errorHandler);
-    }
-
-    function errorHandler(error) {
-        if (error){
-            console.log(error);
-            login();
-        }
-    }
-
-    function triggerFBBtn(turn){
-        // var fbtoken = window.localStorage.getItem("fbtoken");
-        // console.log(fbtoken);
-        if(turn){
-            $('#loginBtn').attr("disabled", true);
-            $('#loginBtn').html('AlreadyLogin');
-        }else{
-            $('#loginBtn').attr("disabled", false);
-            $('#loginBtn').html('Login with Facebook');
-        }
-    }
-
-    function triggerDrupalBtn(turn){
-        // var fbtoken = window.localStorage.getItem("fbtoken");
-        // console.log(fbtoken);
-        if(turn){
-            $('#drupalBtn').html('Logout drupal');
-            $('#drupalBtn').attr('onclick', 'logoutDrupal()');
-        }else{
-            $('#drupalBtn').html('Login drupal');
-            $('#drupalBtn').attr('onclick', 'loginDrupal()');
-        }
-    }
-
-    document.addEventListener("deviceready", onDeviceReady, false);
-
-    // PhoneGap is ready
-    //
-    function onDeviceReady() {
-        pictureSource=navigator.camera.PictureSourceType;
-        destinationType=navigator.camera.DestinationType;
-        triggerDrupalBtn(localStorage.getItem("token"));
-    }
-    function loginDrupal(){
-        loginToDrupal({"hello":"pica"}, function(result){
-            if(result === "success"){
-                alert(result);
-                triggerDrupalBtn(true);
-            }
-        });
-    }
-    function logoutDrupal(){
-        logoutToDrupal(function(result){
-            alert(result);
-            triggerDrupalBtn(false);
-        });
-    }
-    function postDrupal(){
-        postToDrupal(function(result){
-            alert(result);
-        });
-    }
-    function onPhotoDataSuccess(imageData) {
-      // Uncomment to view the base64-encoded image data
-      // console.log(imageData);
-
-      // Get image handle
-      //
-      var smallImage = document.getElementById('smallImage');
-
-      // Unhide image elements
-      //
-      smallImage.style.display = 'block';
-
-      // Show the captured photo
-      // The inline CSS rules are used to resize the image
-      //
-      smallImage.src = "data:image/jpeg;base64," + imageData;
-    }
-
-    // Called when a photo is successfully retrieved
-    //
-    function onPhotoURISuccess(imageURI) {
-      // Uncomment to view the image file URI
-      // console.log(imageURI);
-
-      // Get image handle
-      //
-      var smallImage = document.getElementById('smallImage');
-
-      // Unhide image elements
-      //
-      smallImage.style.display = 'block';
-
-      // Show the captured photo
-      // The inline CSS rules are used to resize the image
-      //
-      smallImage.src = imageURI;
-    }
-
-    // A button will call this function
-    //
-    function capturePhoto() {
-      // Take picture using device camera and retrieve image as base64-encoded string
-      navigator.camera.getPicture(onPhotoDataSuccess, onFail, { quality: 50,
-        destinationType: destinationType.DATA_URL });
-    }
-
-    // A button will call this function
-    //
-    function capturePhotoEdit() {
-      // Take picture using device camera, allow edit, and retrieve image as base64-encoded string
-      navigator.camera.getPicture(onPhotoDataSuccess, onFail, { quality: 20, allowEdit: true,
-        destinationType: destinationType.DATA_URL });
-    }
-
-    // A button will call this function
-    //
-    function getPhoto(source) {
-      // Retrieve image file location from specified source
-      navigator.camera.getPicture(onPhotoDataSuccess/*onPhotoURISuccess*/, onFail, { quality: 50,
-        //destinationType: destinationType.FILE_URI,
-        destinationType: destinationType.DATA_URL,
-        sourceType: source });
-    }
-
-    // Called if something bad happens.
-    //
-    function onFail(message) {
-      alert('Failed because: ' + message);
-    }
+    app.initialize();
 </script>
 </body>
 </html>
+

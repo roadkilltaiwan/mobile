@@ -34,10 +34,10 @@ var rkAuth = {
         this.db.removeItem('uid');
         openFB.revokePermissions(
             function() {
-                alert('FB permossion revoked');
+                console.log('FB permossion revoked');
             },
             function(err) {
-                alert('error: '+err.error_description);
+                console.log('session remove error: '+err.error_description);
                 openFB.logout();
             }
         );
@@ -67,8 +67,8 @@ var rkAuth = {
                 done("success");
             }, this),
             error: function(jqXHR, textStatus, errorThrown){
-                alert(JSON.stringify(jqXHR));
-                alert(JSON.stringify(textStatus));
+                //alert(JSON.stringify(jqXHR));
+                //alert(JSON.stringify(textStatus));
                 fail(errorThrown);
             }
         });
@@ -87,20 +87,20 @@ var rkAuth = {
                 done("success");
             }, this),
             error: function(jqXHR, textStatus, errorThrown){
-                alert(JSON.stringify(jqXHR));
-                alert(JSON.stringify(textStatus));
+                //alert(JSON.stringify(jqXHR));
+                //alert(JSON.stringify(textStatus));
                 fail(errorThrown);
             }
         });
     },
     "loginFB": function() {
-        var permissions = 'user_groups,email';
+        var permissions = 'user_groups';
         openFB.login(permissions,
             function() {
-                alert('Facebook login succeeded\n');
+                console.log('Facebook login succeeded\n');
             },
             function(error) {
-                alert('Facebook login failed: ' + error.error_description);
+                console.log('Facebook login failed: ' + error.error_description);
             }
         );
     },
@@ -124,6 +124,6 @@ var rkAuth = {
             }
             return states[networkState];
         }
-        catch (error) { alert('drupalgap_check_connection - ' + error); }
+        catch (error) { console.log('drupalgap_check_connection - ' + error); }
     }
 };

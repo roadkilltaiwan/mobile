@@ -33,7 +33,12 @@ var app = {
     // The scope of 'this' is the event. In order to call the 'receivedEvent'
     // function, we must explicity call 'app.receivedEvent(...);'
     onDeviceReady: function() {
-        app.receivedEvent('deviceready');
+        //app.receivedEvent('deviceready');
+        if(!rkAuth.init()) {
+            document.location.href = '#logon';
+        } else {
+            document.location.href = '#home';
+        }
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {

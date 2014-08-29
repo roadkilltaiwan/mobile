@@ -39,7 +39,7 @@ var rkView = (function() {
     };
 })();
 
-$(document).on("pagebeforeshow", "#view", function(){
+$(document).on("pagebeforeshow", "#view", function() {
     var myView = rkView.getView();
     var container = $('#view #csfilter');
     var csRef = $('<div data-role="collapsible"><h3></h3><ul data-role="listview"></ul></div>');
@@ -70,6 +70,14 @@ $(document).on("pagebeforeshow", "#view", function(){
     container.trigger('create');
 });
 
-$(document).on("pagebeforehide", "#view", function(){
+$(document).on("pagebeforehide", "#view", function() {
     $('#view #csfilter').empty();
+});
+
+$(document).on("pagecreate", "#view", function() {
+    $('#view #clearHistory').click(function() {
+        rkView.clear();
+        $('#view #csfilter').empty();
+        $(document).trigger('pagebeforeshow', "#view");
+    });
 });
