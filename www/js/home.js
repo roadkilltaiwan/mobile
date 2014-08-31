@@ -142,8 +142,7 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
 RkEventRow.prototype.updateEvent = function() {
     try {
         localStorage.setItem('rkevents', JSON.stringify(rkreport.events));
-        alert(localStorage.rkevents);
-    } catch(err) {alert(err);}
+    } catch(err) { console.log(err); }
 }
 RkEventRow.prototype.updateLocation = function() {
     mapView.delegate = this;
@@ -223,8 +222,6 @@ RkEventRow.prototype.photoLoaded = function() {
         return;
     }
     if(this.location && this.location.latitude && this.location.longitude) {
-        alert("resume previous geolocation parsing: \n"
-            +JSON.stringify(this.location));
         sharedLocationManager.getAddress(this.location.latitude, this.location.longitude, this);
         return;
     }
@@ -239,7 +236,7 @@ RkEventRow.prototype.photoLoaded = function() {
                 exifData = parseExif(img.exifdata);
             }
             catch(err) {
-                alert("unable to parse exif location");
+                console.log("unable to parse exif location");
             }
             if(exifData!=null) {
                 if(exifData.time!=null) {
@@ -321,7 +318,7 @@ RkEventRow.prototype.takePicture = function() {
                 );
             }, this),
             function(msg) {
-                alert("Camera Failed: "+msg);
+                console.log("Camera Failed: "+msg);
             },
             option
         );
@@ -736,9 +733,7 @@ function upload(events, done, fail) {
                 //formData.append("files[field_imagefield_0]");
                 form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
                 form['body'].value = ev.desc;
-try{
                 form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-}catch(err) {alert(err + ', '+i+'/'+events.length+': '+ev.fbPostId);}
                 form['field_data_res[value]'][1].checked = true;
                 form['field_location_img[0][name]'].value = ev.address;
                 form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
@@ -758,7 +753,7 @@ try{
                 //request.send(formData);
               },
               error: function (err) {
-                alert(JSON.stringify(err));
+                console.log(JSON.stringify(err));
                 fail();
                 console.log(err);
               }
@@ -880,13 +875,13 @@ function btnUploadPressed(event, ui) {
                             if(error.code==190) {
                                 alert("請重新授權發文，或變更發佈設定");
                             }else {
-                                alert('Permission check error: '+error.message);
+                                alert('Facebook連結錯誤: '+error.message);
                             }
                         }
                     });
                 },
                 function(error) {
-                    alert('Login failed: ' + error.error_description);
+                    alert('Facebook登入錯誤: ' + error.error_description);
                 }
             );
         } else {
@@ -1023,5 +1018,4 @@ function init(event, ui) {
 
 $(document).on("pagecreate", "#home", init);
 $(document).on("pagecreate", "#map", initGmap);
-
 })();

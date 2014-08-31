@@ -4,7 +4,6 @@ var rkView = (function() {
     var index = db.index? JSON.parse(db.index): [];
     var maxEntries = 20;
     var add = function(rec) {
-        try {
         var ts = new Date().getTime();
         // [TODO] gen photo thumbnail, update rec
         db.setItem(ts, JSON.stringify(rec));
@@ -14,7 +13,6 @@ var rkView = (function() {
         }
         index.unshift(ts);
         db.setItem('index', JSON.stringify(index));
-        }catch(err) {alert(err); }
     };
     var clear = function() {
         index.forEach(function(e, i, arr) {

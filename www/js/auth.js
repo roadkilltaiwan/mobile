@@ -93,14 +93,15 @@ var rkAuth = {
             }
         });
     },
-    "loginFB": function() {
+    "loginFB": function(done) {
         var permissions = 'user_groups';
         openFB.login(permissions,
             function() {
                 console.log('Facebook login succeeded\n');
+                if(done) done();
             },
             function(error) {
-                console.log('Facebook login failed: ' + error.error_description);
+                console.log('Facebook login failed: '+error.error_description);
             }
         );
     },

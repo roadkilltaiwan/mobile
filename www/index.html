@@ -30,6 +30,11 @@
 
 <body>
 
+<div id="splash" data-role="page">
+    <div data-role="main" class="ui-content" data-theme="a">
+    </div>
+</div>
+
 <div id="home" data-role="page">
     <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
         <h1>Roadkill Report!</h1>
@@ -91,7 +96,10 @@
                 <li><a id="PHOTOLIBRARY" class="ui-btn ui-icon-grid ui-btn-icon-left" href="#">從相簿中選取</a></li>
             </ul>
     </div>
-    
+    <div id="eduPopup" data-role="popup" data-theme="a" data-overlay-theme="b" class="ui-content" data-arrow="t,r" data-transition="pop" data-position-to="#btnEdit:first" style="max-width:340px; padding: 35px;">
+        <h2 style="text-align: center">新增照片後，從這裡更改時間地點或重選一張。</h2>
+    </div>
+
     <!-- popups -->
 
 </div>
@@ -147,8 +155,9 @@
             <select name="select-fbPostId" id="select-fbPostId">
                 <option value="0">以個人帳號發佈</option>
                 <option value="1">以公用帳號發佈</option>
-                <option value="2">不公開發佈</option>
+                <option value="2">不要發佈</option>
             </select>
+            <p>在回報時您可以選擇同步發佈到臉書社團，並且以何種身份發表。</p>
         </li>
     </ul>
     <div data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
@@ -158,23 +167,6 @@
     </div>
 </div>
 
-
-<div id="logon" data-role="page">
-    <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
-        <h1>Roadkill Report!</h1>
-    </div>
-    <div data-role="main" class="ui-content" data-theme="a">
-        <img src="./img/logo.jpg" style="display: block; max-width: 70%; margin: auto;" />
-        <div class="ui-field-contain">
-            <form method="post">
-                <input type="text" id="username" placeholder="Username"/>
-                <input type="password" id="password" placeholder="Password"/>
-                <br />
-                <input type="submit" value="Login" id="login" data-icon="carat-r" data-iconpos="right" />
-            </form>
-        </div>
-    </div>
-</div> <!--login-->
 
 <div id="map" data-role="page">
     <div data-role="main" class="ui-content" data-theme="a" style="padding:0;">
@@ -224,21 +216,21 @@
   </div>
 
   <div data-role="main" class="ui-content">
-    <h2>適用範圍</h2>
+    <h3>適用範圍</h3>
     <p>以下的隱私權政策，適用於您在路殺社APP以及其延伸服務網站活動時，所涉及有關個人資料的蒐集、處理及利用說明。</p>
     <p>使用者於閱覽路殺社APP使用說明及隱私權政策之後，點選同意並繼續使用本程式之作為，視為書面同意下述之資料蒐集、處理，及利用方式。</p>
-    <h2>路殺社APP如何蒐集使用者資料？</h2>
+    <h3>路殺社APP如何蒐集使用者資料？</h3>
     <p>在使用路殺社APP的過程中，用戶所使用之瀏覽器將會記錄其所在地點之經緯度，並在上傳照片時主動將相關資訊一併傳遞至伺服器端。</p>
     <p>若使用者未自設資訊屏蔽機制，則路殺社APP之伺服器，將為您保留用戶連線設備IP位址、登入時間，及其使用瀏覽器等相關資訊。</p>
-    <h2>路殺社APP蒐集什麼資料？</h2>
+    <h3>路殺社APP蒐集什麼資料？</h3>
     <p>路殺社APP會蒐集使用者所上傳的照片、拍攝時間、拍攝地點，並且透過Facebook將上列資訊上傳至路殺社Facebook社團（https://www.facebook.com/groups/roadkilled/）；路殺社APP之伺服器會記錄用戶連線設備IP位址、登入時間以及使用瀏覽器等相關資訊。</p>
-    <h2>路殺社APP會如何使用所蒐集的資料？</h2>
+    <h3>路殺社APP會如何使用所蒐集的資料？</h3>
     <p>路殺社將運用這些資料分析路死嚴重的路段、季節及種類，改善道路設計或增加廊道、圍籬等設施，以減少野生動物因國內道路開發與車流量日漸增加而造成的直接死亡。用戶IP位址、登入時間以及瀏覽器資訊，將會作為於改善服務品質之參考資訊。</p>
-    <h2>資料的分享與公開方式</h2>
+    <h3>資料的分享與公開方式</h3>
     <p>用戶所提供之路殺資料，包括經緯度、日期、地點名稱、註解，其僅屬單純資訊記載之態樣者，日後將採適宜的資料開放途徑進行披露，以促進公民科學發展，及激勵參與者資料共享循環；而若提供素材內含具著作權保護之照片、專文者，則另依用戶選擇之創用CC授權條款(Creative Commons License)，或其相容模式來進行釋出。
 隱私權保護政策修訂</p>
     <p>路殺社APP將不定時修訂本項政策，以符合最新的個人資料與相關法定權利之保護規範；當相關規定進行大幅度修改時，會在路殺社Facebook社團上張貼告示。</p>
-    <h2>回報機制</h2>
+    <h3>回報機制</h3>
     <p>路殺社APP對於相關資料的收集，已踐履個人資料保護法及其相關法規的基礎要求，並在資料的處理及利用上，盡量透過量化與去識別化的流程，以強化使用者的隱私防護，然相關資料在處理之後，亦可能進行科研公益目的之分享，故倘若您對於任一筆資料的呈現，有與您個人隱私及其他合法權利防護產生衝突的疑惑，歡迎透過社團頁面的回報機制，將對您相關資料進行查閱、更正、停止利用，以及刪除的意見回饋給資料的管理者。</p>
   </div>
 
@@ -248,6 +240,24 @@
     </div>
   </div>
 </div>
+
+<div id="logon" data-role="page">
+    <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
+        <h1>Roadkill Report!</h1>
+    </div>
+    <div data-role="main" class="ui-content" data-theme="a">
+        <img src="./img/logo.jpg" style="display: block; max-width: 70%; margin: auto;" />
+        <div class="ui-field-contain">
+            <form method="post">
+                <input type="text" id="username" placeholder="TaiRON帳號"/>
+                <input type="password" id="password" placeholder="TaiRON密碼"/>
+                <p>登入使用表示您已閱讀並同意路殺社APP的<a href="#contract">隱私權政策</a>。</p>
+                <input type="submit" value="登入" id="login" data-icon="carat-r" data-iconpos="right" />
+            </form>
+        </div>
+    </div>
+</div> <!--login-->
+
 <script>
     app.initialize();
 </script>
