@@ -587,15 +587,15 @@ MapView.prototype.datePickerChanged = function(event, passed) {
 };
 
 function showPageBusy(label) {
-  $.mobile.loading('show', {
-      text: label,
-      textVisible: true,
-      theme: 'c'
-  });
+    $.mobile.loading('show', {
+        text: label,
+        textVisible: true,
+        theme: 'c'
+    });
 }
 
 function hidePageBusy() {
-  $.mobile.loading('hide');
+    $.mobile.loading('hide');
 }
 
 function parseExif(exif) {
@@ -755,7 +755,7 @@ function upload(events, done, fail) {
               error: function (err) {
                 console.log(JSON.stringify(err));
                 fail();
-                console.log(err);
+                console.log(JSON.stringify(err));
               }
             });
           };
@@ -814,6 +814,8 @@ function validateEvents(events) {
 
 function btnUploadPressed(event, ui) {
     event.preventDefault();
+    if(event.target.busy) return;
+    else event.target.busy = true;
     
     var validEventCount = rkreport.validEventCount();
     if(validEventCount==0) {
@@ -823,10 +825,12 @@ function btnUploadPressed(event, ui) {
     var done = function(resp) {
         clearReport(rkreport);
         hidePageBusy();
+        event.target.busy = false;
         alert(UPLOAD_DONE);
     };
     var fail = function(xhr, status) {
         hidePageBusy();
+        event.target.busy = false;
         alert(UPLOAD_FAILED);
     };
     

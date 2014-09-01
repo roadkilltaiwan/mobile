@@ -32,15 +32,7 @@ var rkAuth = {
         this.db.removeItem('sessId');
         this.db.removeItem('CSRF_token');
         this.db.removeItem('uid');
-        openFB.revokePermissions(
-            function() {
-                console.log('FB permossion revoked');
-            },
-            function(err) {
-                console.log('session remove error: '+err.error_description);
-                openFB.logout();
-            }
-        );
+        openFB.logout();
     },
     "isSessExpired": function() {
         return !this.db.expTime || this.db.expTime<new Date().getTime();
@@ -64,7 +56,7 @@ var rkAuth = {
                 this.db.setItem("uid", result.user.uid);
                 this.setSession(result.session_name, result.sessid, 21);
 
-                done("success");
+                done();
             }, this),
             error: function(jqXHR, textStatus, errorThrown){
                 //alert(JSON.stringify(jqXHR));
@@ -84,7 +76,7 @@ var rkAuth = {
             }, this),
             success: $.proxy(function(result) {
                 this.removeSession();
-                done("success");
+                done();
             }, this),
             error: function(jqXHR, textStatus, errorThrown){
                 //alert(JSON.stringify(jqXHR));
@@ -123,8 +115,7 @@ var rkAuth = {
             else {
               return true;
             }
-            return states[networkState];
         }
-        catch (error) { console.log('drupalgap_check_connection - ' + error); }
+        catch (error) { console.log('Check connection - error: ' + error); }
     }
 };
