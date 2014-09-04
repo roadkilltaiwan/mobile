@@ -93,3 +93,7 @@ img.vcenter {
   position:fixed;
   bottom:0;
 }
+
+div.page {
+  -webkit-transform: translate3d(0,0,0);
+}

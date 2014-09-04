@@ -21,6 +21,7 @@ var PICK_DATE = "請選拍攝日期";
 var PROCESSING = "處理中...";
 var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
+var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳號發文，或至[選項]>[在路殺社臉書社團…]，選擇以公用帳號發佈或不要發佈。";
 
 /* ui elements */
 var btnUpload;
@@ -728,21 +729,25 @@ function upload(events, done, fail) {
               },
               success: function (result) {
                 var sDate = new Date(ev.time);
-                form['field_imagefield[0][fid]'].value = result.fid;
-                //[TODO] file input form post
-                //formData.append("files[field_imagefield_0]");
-                form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
-                form['body'].value = ev.desc;
-                form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-                form['field_data_res[value]'][1].checked = true;
-                form['field_location_img[0][name]'].value = ev.address;
-                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
-                form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-                form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
-                form['status'].value = 1;
-                form['promote'].value = 1;
+                try{
+                    form['field_imagefield[0][fid]'].value = result.fid;
+                    //[TODO] file input form post
+                    //formData.append("files[field_imagefield_0]");
+                    form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
+                    form['body'].value = ev.desc;
+                    form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+                    form['field_data_res[value]'][1].checked = true;
+                    form['field_location_img[0][name]'].value = ev.address;
+                    form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+                    form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+                    form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
+                    form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+                    form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
+                }catch(err){
+                    console.log('form filling error: '+err);
+                    fail();
+                    return;
+                }
                 var request = new XMLHttpRequest();
                 request.open('POST', 'http://roadkill.tw/phone/node/add/image');
                 request.onload = function () {
@@ -869,7 +874,7 @@ function btnUploadPressed(event, ui) {
                                     e["status"] == "granted";
                             });
                             if(!checkPublish || !checkGroup) {
-                                alert("請重新授權發文，或變更發佈設定");
+                                alert(FB_PERMISSION_ERROR);
                             }else {
                                 showPageBusy(UPLOADING);
                                 upload(events, done, fail);
@@ -877,7 +882,7 @@ function btnUploadPressed(event, ui) {
                         },
                         "error": function(error) {
                             if(error.code==190) {
-                                alert("請重新授權發文，或變更發佈設定");
+                                alert(FB_PERMISSION_ERROR);
                             }else {
                                 alert('Facebook連結錯誤: '+error.message);
                             }
