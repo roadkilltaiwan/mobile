@@ -56,7 +56,10 @@ var rkAuth = {
                 this.db.setItem("uid", result.user.uid);
                 this.setSession(result.session_name, result.sessid, 21);
 
-                done();
+                this.loginFB(done, function(err) {
+                    if(err) alert(err);
+                    done();
+                });
             }, this),
             error: function(jqXHR, textStatus, errorThrown){
                 //alert(JSON.stringify(jqXHR));
@@ -76,7 +79,7 @@ var rkAuth = {
             }, this),
             success: $.proxy(function(result) {
                 this.removeSession();
-                done();
+                facebookConnectPlugin.logout(done, done);
             }, this),
             error: function(jqXHR, textStatus, errorThrown){
                 //alert(JSON.stringify(jqXHR));
@@ -85,7 +88,20 @@ var rkAuth = {
             }
         });
     },
-    "loginFB": function(done) {
+    "loginFB": function(done, fail) {
+        facebookConnectPlugin.login(
+            ['user_groups'],
+            function(response) {
+                console.log('Facebook login succeeded\n');
+                if(done) done(response);
+            },
+            function(error) {
+                console.log('Facebook login failed: '+error);
+                if(fail) fail('無法登入臉書:(');
+            }
+        );
+        
+        /*
         var permissions = 'user_groups';
         openFB.login(permissions,
             function() {
@@ -95,7 +111,7 @@ var rkAuth = {
             function(error) {
                 console.log('Facebook login failed: '+error.error_description);
             }
-        );
+        );*/
     },
     "isOnline": function() {
         if(!navigator.connection) return navigator.onLine;

@@ -1,25 +1,17 @@
 $(document).on("pagecreate", "#logon", function(event) {
     var onLogin = function(result) {
-        $(document).on("pagebeforeshow", "#home", function(event) {
-            $(document).off("pagebeforeshow", "#home");
+        $(document).on("pageshow", "#home", function(event) {
+            $(document).off("pageshow", "#home");
             $('#login').prop('disabled', false).removeClass('ui-disabled');
-            try {
-                if(!rkAuth.db.fbtoken) {
-                    rkAuth.loginFB(function() {
-                        $.mobile.loading('hide');
-                        var options = {
-                            y: "50"
-                        };
-                        window.setTimeout(function() {
-                            $('#eduPopup').popup("open", options);
-                        }, 300);
-                    });
-                }
-            }catch(err) {
-                console.log(JSON.stringify(err));
-            }
+            $.mobile.loading('hide');
+            var options = {
+                y: "50"
+            };
+            window.setTimeout(function() {
+                $('#eduPopup').popup("open", options);
+            }, 300);
         });
-        document.location.href = '#home';
+        window.location.replace('#home');
     };
     function loginDrupal(e){
         e.preventDefault();

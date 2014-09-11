@@ -1,14 +1,14 @@
 
+Install Cordova CLI first
+
 phongap useage
 
 cordova build
-cordova prepare
+cordova run/emulate
 
 ---------------
-
 Android:
-eclipse import exist workproject (platforms/android)
-
+Follow this [guide](https://github.com/Wizcorp/phonegap-facebook-plugin/blob/develop/platforms/android/README.md) from phonegap-facebook-plugin
 run on device
 
 iOS:

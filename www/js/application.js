@@ -34,13 +34,20 @@ var app = {
     // function, we must explicity call 'app.receivedEvent(...);'
     onDeviceReady: function() {
         //app.receivedEvent('deviceready');
-        if(!rkAuth.db.sessId) {
-            document.location.href = '#contract';
-        } else if(!rkAuth.init()) {
-            document.location.href = '#logon';
+        var nav = ['#view', '#home', '#setting'];
+        var selector = ['.ui-block-a', '.ui-block-b', '.ui-block-c'];
+        selector.forEach(function(sel, i) {
+            $(sel).click(function() {
+                window.location.replace(nav[i]);
+            });
+        });
+        var to;
+        if(!rkAuth.init()) {
+            to = '#logon';
         } else {
-            document.location.href = '#home';
+            to = '#home';
         }
+        window.location.replace(to);
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {

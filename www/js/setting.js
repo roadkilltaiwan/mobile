@@ -5,13 +5,13 @@ $(document).on("pagecreate", "#setting", function(event) {
             $('#logout').prop('disabled', false).removeClass('ui-disabled');
             $(document).off("pagehide", "#setting");
         });
-        document.location.href = '#logon';
-    }
+        window.location.replace('#logon');
+    };
     var onFail = function(message) {
         alert('錯誤: ' + message);
         $.mobile.loading('hide');
         $('#logout').prop('disabled', false).removeClass('ui-disabled');
-    }
+    };
     function logoutDrupal() {
         $.mobile.loading("show", {
             text: "正在登出…",

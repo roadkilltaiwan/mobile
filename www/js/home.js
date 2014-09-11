@@ -21,6 +21,7 @@ var PICK_DATE = "請選拍攝日期";
 var PROCESSING = "處理中...";
 var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
+var FB_VERIFYING = "準備中...";
 var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳號發文，或至[選項]>[在路殺社臉書社團…]，選擇以公用帳號發佈或不要發佈。";
 
 /* ui elements */
@@ -760,7 +761,6 @@ function upload(events, done, fail) {
               error: function (err) {
                 console.log(JSON.stringify(err));
                 fail();
-                console.log(JSON.stringify(err));
               }
             });
           };
@@ -819,8 +819,8 @@ function validateEvents(events) {
 
 function btnUploadPressed(event, ui) {
     event.preventDefault();
-    if(event.target.busy) return;
-    else event.target.busy = true;
+    var btn = $(event.target);
+    btn.prop('disabled', true).addClass('ui-disabled');;
     
     var validEventCount = rkreport.validEventCount();
     if(validEventCount==0) {
@@ -830,12 +830,12 @@ function btnUploadPressed(event, ui) {
     var done = function(resp) {
         clearReport(rkreport);
         hidePageBusy();
-        event.target.busy = false;
+        btn.prop('disabled', false).removeClass('ui-disabled');;
         alert(UPLOAD_DONE);
     };
     var fail = function(xhr, status) {
         hidePageBusy();
-        event.target.busy = false;
+        btn.prop('disabled', false).removeClass('ui-disabled');;
         alert(UPLOAD_FAILED);
     };
     
@@ -846,7 +846,7 @@ function btnUploadPressed(event, ui) {
         alert(error.message);
         return;
     }
-    var permissionHandler = function(response) {
+    /*var permissionHandler = function(response) {
         var groupGranted = response.data.some(function(elem) {
             return elem["permission"] == "user_groups" &&
                 elem["status"] == "granted";
@@ -897,10 +897,61 @@ function btnUploadPressed(event, ui) {
             showPageBusy(UPLOADING);
             upload(events, done, fail);
         }
-    };
-    var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
-    if(publish) {
-        openFB.api({
+    };*/
+    var verifyPost = function(success, cancel) {
+        facebookConnectPlugin.api(
+            "/me/permissions",
+            ["user_groups"],
+            function(result) {
+                if(result.data.some(function(e) {
+                    return e.status==="granted" &&
+                        e.permission==="user_groups";
+                })) {
+                    facebookConnectPlugin.api(
+                        "/me/permissions",
+                        ["publish_actions"],
+                        function(result) {
+                            if(result.data.some(function(e) {
+                                return e.status==="granted" &&
+                                    e.permission==="publish_actions";
+                            })) {
+                                facebookConnectPlugin.getLoginStatus(
+                                    function(response) {
+                                        rkAuth.db['fbtoken'] = response.authResponse.accessToken;
+                                        success();
+                                    },
+                                    function(err) {
+                                        console.log(err);
+                                        cancel('fb connect fail');
+                                    }
+                                );
+                            }else cancel(FB_PERMISSION_ERROR);
+                        },
+                        function(err) {
+                            console.log(err);
+                            cancel('fb connect fail');
+                        }
+                    );
+                }else cancel(FB_PERMISSION_ERROR);
+            },
+            function(err) {
+                console.log(err);
+                // workaround for the absense of error fallback on user decline
+                window.setTimeout(cancel, 5000);
+                rkAuth.loginFB(
+                    function() {
+                        showPageBusy(FB_VERIFYING);
+                        btn.prop('disabled', true).addClass('ui-disabled');;
+                        verifyPost(success, cancel);
+                    },
+                    function(err) {
+                        console.log(err);
+                        cancel('fb connect fail');
+                    }
+                );
+            }
+        );
+        /*openFB.api(
             "path": "/me/permissions",
             "success": permissionHandler,
             "error": function(error) {
@@ -911,10 +962,28 @@ function btnUploadPressed(event, ui) {
                     fail();
                 }
             }
-        });
+        });*/
+    };
+    var cancelUpload = function(msg) {
+        hidePageBusy();
+        if(msg) alert(msg);
+        btn.prop('disabled', false).removeClass('ui-disabled');;
+    };
+    var startUpload = function() {
+        hidePageBusy();
+        if(confirm("確定開始上傳？")) {
+            showPageBusy(UPLOADING);
+            btn.prop('disabled', true).addClass('ui-disabled');;
+            upload(events, done, fail);
+        }else cancelUpload();
+    };
+
+    var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
+    if(publish) {
+        showPageBusy(FB_VERIFYING);
+        verifyPost(startUpload, cancelUpload);
     }else {
-        showPageBusy(UPLOADING);
-        upload(events, done, fail);
+        startUpload();
     }
 }
 
