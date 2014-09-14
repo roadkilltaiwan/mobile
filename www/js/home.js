@@ -15,6 +15,7 @@ var LOCATION_SERVICE_DENIED = "請允許網站使用定位服務";
 var CHINESE_DIGITS = ['一', '二', '三'];
 var UPLOAD_DONE = "上傳成功!";
 var UPLOAD_FAILED = "無法上傳，請稍後再試";
+var UPLOAD_ABORT = "上傳已中斷";
 var UPLOADING = "上傳中..."; 
 var PICK_LOCATION = "請點選地點";
 var PICK_DATE = "請選拍攝日期"; 
@@ -28,6 +29,7 @@ var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳�
 var btnUpload;
 var editPopup;
 var imgPopup;
+var uploadPopup;
 var uiReady = false;
 
 /* views */
@@ -120,18 +122,18 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.descElement = this.rowElement.find(".photoDesc");
     this.descElement.on("change", $.proxy(function() {
         this.event.desc = this.descElement.val();
-        this.updateEvent();
+        rkreport.updateStorage();
     }, this));
     this.locationElement = this.rowElement.find(".location");
     this.licenseSelect = $("#select-cc");
     this.licenseSelect.on("change", $.proxy(function() {
         this.event.license = this.licenseSelect.find('option:selected').val();
-        this.updateEvent();
+        rkreport.updateStorage();
     }, this));
     this.fbPostIdSelect = $("#select-fbPostId");
     this.fbPostIdSelect.on("change", $.proxy(function() {
         this.event.fbPostId = this.fbPostIdSelect.find('option:selected').val();
-        this.updateEvent();
+        rkreport.updateStorage();
     }, this));
     this.btnEdit = this.rowElement.find(".btnEdit");
     this.btnEdit.on("click", $.proxy(this.btnEditPressed, this));
@@ -141,11 +143,6 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
     this.hasImage = false;
 }
 
-RkEventRow.prototype.updateEvent = function() {
-    try {
-        localStorage.setItem('rkevents', JSON.stringify(rkreport.events));
-    } catch(err) { console.log(err); }
-}
 RkEventRow.prototype.updateLocation = function() {
     mapView.delegate = this;
     mapView.show({location: this.event.location, address: {longaddress: this.event.address, shortaddress: this.event.shortAddress}, time: new Date(this.event.time)});
@@ -155,7 +152,7 @@ RkEventRow.prototype.handleAddress = function(address) {
     this.event.address = address.longaddress;
     this.event.shortAddress = address.shortaddress;
     this.locationElement.html(address.shortaddress);
-    this.updateEvent();
+    rkreport.updateStorage();
     hidePageBusy();
 };
 
@@ -203,7 +200,7 @@ RkEventRow.prototype.retakePhoto = function() {
     editPopup.popup("close");
     this.clear();
     this.event.clear();
-    this.updateEvent();
+    rkreport.updateStorage();
 };
 
 RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
@@ -303,7 +300,7 @@ RkEventRow.prototype.takePicture = function() {
                                 function(f) {
                                     that.displayPhoto(f.toURL());
                                     that.event.photoURL = f.toURL();
-                                    that.updateEvent();
+                                    rkreport.updateStorage();
                                 }
                             );
                         }, errorHandler);
@@ -397,6 +394,10 @@ RkReport.prototype.validEventCount = function() {
         }
     }
     return count;
+};
+
+RkReport.prototype.updateStorage = function() {
+    localStorage.setItem('rkevents', JSON.stringify(this.events));
 };
 
 function MapView(mapCanvas) {
@@ -702,82 +703,128 @@ function viewWidth() {
 }
 
 function upload(events, done, fail) {
-  var getter = new XMLHttpRequest();
-  getter.onreadystatechange = function () {
-    if (this.readyState != 4 || this.status != 200) return ;
-    var form = this.responseXML.getElementById('node-form');
-    var counter = events.length;
-    events.forEach(function(ev, i, arr) {
-      window.resolveLocalFileSystemURL(ev.photoURL, function (fileEntry) {
-        fileEntry.file(function (file) {
-          var reader = new FileReader();
-          reader.onloadend = function () {
-            var base64 = this.result.replace(/data:\S*;base64,/, '');
-            $.ajax({
-              url: 'http://roadkill.tw/phone/drupalgap/file',
-              type: 'POST',
-              dataType: 'json',
-              data: {
-                'file': {
-                  'file': base64,
-                  'filename': 'image.jpg',
-                  'uid': localStorage.getItem('uid')
-                }
-              },
-              beforeSend: function (xhr) {
-                xhr.setRequestHeader('X-CSRF-Token', rkAuth.db.CSRF_token);
-                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-              },
-              success: function (result) {
-                var sDate = new Date(ev.time);
-                try{
-                    form['field_imagefield[0][fid]'].value = result.fid;
-                    //[TODO] file input form post
-                    //formData.append("files[field_imagefield_0]");
-                    form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
-                    form['body'].value = ev.desc;
-                    form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-                    form['field_data_res[value]'][1].checked = true;
-                    form['field_location_img[0][name]'].value = ev.address;
-                    form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-                    form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-                    form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
-                    form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-                    form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
-                }catch(err){
-                    console.log('form filling error: '+err);
-                    fail();
-                    return;
-                }
-                var request = new XMLHttpRequest();
-                request.open('POST', 'http://roadkill.tw/phone/node/add/image');
-                request.onload = function () {
-                  counter--;
-                  if(counter==0) done();
-                };
-                request.send(new FormData(form));
-                //request.send(formData);
-              },
-              error: function (err) {
-                console.log(JSON.stringify(err));
-                fail();
-              }
-            });
-          };
-          reader.readAsDataURL(file);
-        });
-      });
+    var state = uploadPopup.find('h3');
+    state.html(UPLOADING);
+    var progress = uploadPopup.find('p');
+    progress.html('('+1+'/'+events.length+')');
+    var btnCancel = uploadPopup.find('a');
+    uploadPopup.off("popupafterclose").on("popupafterclose", function() {
+        btnUpload.prop('disabled', false).removeClass('ui-disabled');
     });
-  };
-  getter.open('GET', 'http://roadkill.tw/phone/node/add/image', true);
-  getter.responseType = 'document';
-  getter.send();
+
+    var addAbortListener = function (xhr) {
+        if(btnCancel.abort) return false;
+        btnCancel.off('click').on('click', function() {
+            btnCancel.abort = true;
+            xhr.abort();
+        });
+        return true;
+    };
+    uploadPopup.popup("open");
+    $.ajax({
+        url: 'http://roadkill.tw/phone/node/add/image',
+        type: 'GET',
+        dataType: 'xml',
+        beforeSend: addAbortListener,
+    }).done(function(response) {
+        var form = response.getElementById('node-form');
+        var poster = function(ev, i) {
+            progress.html('('+i+'/'+events.length+')');
+            window.resolveLocalFileSystemURL(ev.photoURL, function (fileEntry) {
+                fileEntry.file(function (file) {
+                    var reader = new FileReader();
+                    reader.onloadend = function () {
+                        var base64 = this.result.replace(/data:\S*;base64,/, '');
+                        $.ajax({
+                            url: 'http://roadkill.tw/phone/drupalgap/file',
+                            type: 'POST',
+                            dataType: 'json',
+                            data: {
+                                'file': {
+                                    'file': base64,
+                                    'filename': 'image.jpg',
+                                    'uid': rkAuth.db.uid
+                                }
+                            },
+                            beforeSend: function (xhr) {
+                                xhr.setRequestHeader('X-CSRF-Token', rkAuth.db.CSRF_token);
+                                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                                return addAbortListener(xhr);
+                            }
+                        }).done(function (result) {
+                            var sDate = new Date(ev.time);
+                            try{
+                                form['field_imagefield[0][fid]'].value = result.fid;
+                                //[TODO] file input form post
+                                //formData.append("files[field_imagefield_0]");
+                                form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
+                                form['body'].value = ev.desc;
+                                form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+                                form['field_data_res[value]'][1].checked = true;
+                                form['field_location_img[0][name]'].value = ev.address;
+                                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+                                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+                                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
+                                form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+                                form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
+                            }catch(err){
+                                console.log('form filling error: '+err);
+                                fail();
+                                return;
+                            }
+                            $.ajax({
+                                type: 'POST',
+                                url: 'http://roadkill.tw/phone/node/add/image',
+                                data: new FormData(form),
+                                contentType: false,
+                                processData: false,
+                                beforeSend: addAbortListener
+                            }).done(function () {
+                                if(i<events.length) {
+                                    poster(events[i], i+1);
+                                }else {
+                                    state.html(UPLOAD_DONE);
+                                    done();
+                                }
+                            }).fail(function(jqXHR, textStatus, errorThrown) {
+                                state.html(UPLOAD_ABORT);
+                                console.log('Form posting error: '+textStatus);
+                                var sentItems = events.slice(0, i-1);
+                                clearReport(sentItems);
+                                if(errorThrown==="abort") {
+                                    //[TODO] Cancel the uploaded image
+                                }else {
+                                    fail();
+                                }
+                            });
+                        }).fail(function(jqXHR, textStatus, errorThrown) {
+                            state.html(UPLOAD_ABORT);
+                            console.log('File Upload Error: '+textStatus);
+                            var sentItems = events.slice(0, i-1);
+                            clearReport(sentItems);
+                            if(errorThrown!=="abort") {
+                                fail();
+                            }
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+        };
+        poster(events[0], 1);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        state.html(UPLOAD_ABORT);
+        console.log('Form retrieval error: '+textStatus);
+        if(errorThrown!=="abort") {
+            fail();
+        }
+    });
 }
 
-function clearReport(report) {
-    for(var i=0; i<report.events.length; i++) {
+function clearReport(events) {
+    for(var i=0; i<events.length; i++) {
         var eventRow = eventRows[i];
-        var event = report.events[i];
+        var event = events[i];
         eventRow.clear();
         if(event.photoURL) {
             rkView.add(event);
@@ -785,7 +832,7 @@ function clearReport(report) {
         }
         event.clear();
     }
-    localStorage.removeItem('rkevents');
+    rkreport.updateStorage();
 }
 
 function prepareReport(report) {
@@ -819,26 +866,12 @@ function validateEvents(events) {
 
 function btnUploadPressed(event, ui) {
     event.preventDefault();
-    var btn = $(event.target);
-    btn.prop('disabled', true).addClass('ui-disabled');;
     
     var validEventCount = rkreport.validEventCount();
     if(validEventCount==0) {
         alert(PHOTO_UNAVAILABLE);
         return;
     }
-    var done = function(resp) {
-        clearReport(rkreport);
-        hidePageBusy();
-        btn.prop('disabled', false).removeClass('ui-disabled');;
-        alert(UPLOAD_DONE);
-    };
-    var fail = function(xhr, status) {
-        hidePageBusy();
-        btn.prop('disabled', false).removeClass('ui-disabled');;
-        alert(UPLOAD_FAILED);
-    };
-    
     prepareReport(rkreport);
     var events = rkreport.validEvents();
     var error = validateEvents(events);
@@ -846,6 +879,17 @@ function btnUploadPressed(event, ui) {
         alert(error.message);
         return;
     }
+
+    var done = function(resp) {
+        clearReport(rkreport.events);
+        uploadPopup.popup("close");
+        alert(UPLOAD_DONE);
+    };
+    var fail = function(xhr, status) {
+        uploadPopup.popup("close");
+        alert(UPLOAD_FAILED);
+    };
+
     /*var permissionHandler = function(response) {
         var groupGranted = response.data.some(function(elem) {
             return elem["permission"] == "user_groups" &&
@@ -941,7 +985,7 @@ function btnUploadPressed(event, ui) {
                 rkAuth.loginFB(
                     function() {
                         showPageBusy(FB_VERIFYING);
-                        btn.prop('disabled', true).addClass('ui-disabled');;
+                        btnUpload.prop('disabled', true).addClass('ui-disabled');
                         verifyPost(success, cancel);
                     },
                     function(err) {
@@ -966,21 +1010,20 @@ function btnUploadPressed(event, ui) {
     };
     var cancelUpload = function(msg) {
         hidePageBusy();
+        btnUpload.prop('disabled', false).removeClass('ui-disabled');
         if(msg) alert(msg);
-        btn.prop('disabled', false).removeClass('ui-disabled');;
     };
     var startUpload = function() {
         hidePageBusy();
         if(confirm("確定開始上傳？")) {
-            showPageBusy(UPLOADING);
-            btn.prop('disabled', true).addClass('ui-disabled');;
             upload(events, done, fail);
         }else cancelUpload();
     };
 
+    showPageBusy(FB_VERIFYING);
+    btnUpload.prop('disabled', true).addClass('ui-disabled');
     var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
     if(publish) {
-        showPageBusy(FB_VERIFYING);
         verifyPost(startUpload, cancelUpload);
     }else {
         startUpload();
@@ -1016,6 +1059,7 @@ function initUI() {
     //editPopup.popup( "option", "transition", "pop" );
     imgPopup = $("#imgPopup");    
     //imgPopup.popup( "option", "transition", "pop" );
+    uploadPopup = $("#uploadPopup");    
     var elements = $("[id=eventRow]");
     for(var row=0; row<elements.length; row++) {
         var element = elements[row];
