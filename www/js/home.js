@@ -307,6 +307,7 @@ RkEventRow.prototype.takePicture = function() {
                     }, errorHandler);
                 }
                 var errorHandler = function(err) {
+                    that.hasImage = false;
                     console.log(JSON.stringify(err));
                 };
                 window.requestFileSystem(window.TEMPORARY, 1024*1024,
@@ -349,7 +350,13 @@ function RkEvent() {
 }
 
 RkEvent.prototype.clear = function() {
-var oldURL = this.photoURL;
+    if(this.photoURL !== null) {
+        window.resolveLocalFileSystemURL(this.photoURL, function(fileEntry) {
+            fileEntry.remove(function() {
+              console.log('File removed.');
+            }, function(err) { console.log('File removal error: '+err); });
+        });
+    }
     this.photoURL = null;
     this.time = null;
     this.location = null;
@@ -358,12 +365,7 @@ var oldURL = this.photoURL;
     this.shortAddress = null;
     this.license = null;
     this.fbPostId = null;
-// [TODO] Remove photo file here
-/*window.resolveLocalFileSystemURL(oldURL, function(fileEntry) {
-    fileEntry.remove(function() {
-      console.log('File removed.');
-    }, function(err) { console.log('File removal error: '+err); });
-});*/
+    rkreport.updateStorage();
 };
 
 function RkReport() {
@@ -782,15 +784,15 @@ function upload(events, done, fail) {
                             }).done(function () {
                                 if(i<events.length) {
                                     poster(events[i], i+1);
+                                    rkView.add(ev);
                                 }else {
                                     state.html(UPLOAD_DONE);
-                                    done();
+                                    rkView.add(ev, done);
                                 }
                             }).fail(function(jqXHR, textStatus, errorThrown) {
                                 state.html(UPLOAD_ABORT);
                                 console.log('Form posting error: '+textStatus);
-                                var sentItems = events.slice(0, i-1);
-                                clearReport(sentItems);
+                                trimReport(i-1);
                                 if(errorThrown==="abort") {
                                     //[TODO] Cancel the uploaded image
                                 }else {
@@ -800,8 +802,7 @@ function upload(events, done, fail) {
                         }).fail(function(jqXHR, textStatus, errorThrown) {
                             state.html(UPLOAD_ABORT);
                             console.log('File Upload Error: '+textStatus);
-                            var sentItems = events.slice(0, i-1);
-                            clearReport(sentItems);
+                            trimReport(i-1);
                             if(errorThrown!=="abort") {
                                 fail();
                             }
@@ -821,18 +822,24 @@ function upload(events, done, fail) {
     });
 }
 
-function clearReport(events) {
-    for(var i=0; i<events.length; i++) {
+function clearReport(report) {
+    for(var i=0; i<report.events.length; i++) {
         var eventRow = eventRows[i];
-        var event = events[i];
+        var event = report.events[i];
         eventRow.clear();
-        if(event.photoURL) {
-            rkView.add(event);
-            console.log(JSON.stringify(rkView.getView()));
-        }
         event.clear();
     }
-    rkreport.updateStorage();
+}
+
+function trimReport(trimSize) {
+    for(var i=0, t=0; i<eventRows.length && t<trimSize; i++) {
+        var eventRow = eventRows[i];
+        if(eventRow.hasImage) {
+            eventRow.clear();
+            eventRow.event.clear();
+            t++;
+        }
+    }
 }
 
 function prepareReport(report) {
@@ -859,7 +866,7 @@ function validateEvents(events) {
                 eventid: i,
                 message: "請為第" + CHINESE_DIGITS[i] + "筆紀錄標定日期與位置"
             };
-        }       
+        }
     }
     return null;
 }
@@ -881,7 +888,7 @@ function btnUploadPressed(event, ui) {
     }
 
     var done = function(resp) {
-        clearReport(rkreport.events);
+        clearReport(rkreport);
         uploadPopup.popup("close");
         alert(UPLOAD_DONE);
     };

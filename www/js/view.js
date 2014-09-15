@@ -3,22 +3,42 @@ var rkView = (function() {
     var db = localStorage;
     var index = db.index? JSON.parse(db.index): [];
     var maxEntries = 20;
-    var add = function(rec) {
+    var add = function(rec, done) {
         var ts = new Date().getTime();
-        // [TODO] gen photo thumbnail, update rec
-        db.setItem(ts, JSON.stringify(rec));
-        if(index.length>=maxEntries) {
-            // [TODO] remove the oldest photo thumbnail
-            db.removeItem(index.pop());
+        // [TODO] gen photo thumbnail
+        function copy(cwd, src, dest) {
+            window.resolveLocalFileSystemURL(src, function(fileEntry) {
+                cwd.getDirectory(dest, {}, function(dirEntry) {
+                    fileEntry.copyTo(dirEntry,
+                        'image_'+ts+'.jpg',
+                        function(f) {
+                            rec.photoURL = f.toURL();
+                            db.setItem(ts, JSON.stringify(rec));
+                            rec.photoURL = src;
+                            if(done) done();
+                            if(index.length>=maxEntries) {
+                                removeRec(index.pop());
+                            }
+                            index.unshift(ts);
+                            db.setItem('index', JSON.stringify(index));
+                        }
+                    );
+                }, errorHandler);
+            }, errorHandler);
         }
-        index.unshift(ts);
-        db.setItem('index', JSON.stringify(index));
+        var errorHandler = function(err) {
+            alert('儲存紀錄時發生錯誤:(');
+            console.log(JSON.stringify(err));
+        };
+        window.requestFileSystem(window.PERSISTENT, 1024*1024,
+            function(fs) {
+                copy(fs.root, rec.photoURL, '');
+            },
+            errorHandler
+        );
     };
     var clear = function() {
-        index.forEach(function(e, i, arr) {
-            //delete photo thumbnails
-            db.removeItem(e);
-        });
+        index.forEach(removeRec);
         db.removeItem('index');
         index = [];
     };
@@ -27,6 +47,15 @@ var rkView = (function() {
             reqLen = index.length;
         return index.slice(0, reqLen).map(function(e) {
             return JSON.parse(db.getItem(e));
+        });
+    };
+    var removeRec = function(key) {
+        var obj = JSON.parse(db[key]);
+        db.removeItem(key);
+        window.resolveLocalFileSystemURL(obj.photoURL, function(fileEntry) {
+            fileEntry.remove(function() {
+                console.log('Rec file '+key+' removed.');
+            }, function(err) { console.log('Rec file '+key+' removal error: '+err); });
         });
     };
     return {
