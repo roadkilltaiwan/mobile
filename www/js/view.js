@@ -5,37 +5,16 @@ var rkView = (function() {
     var maxEntries = 20;
     var add = function(rec, done) {
         var ts = new Date().getTime();
-        // [TODO] gen photo thumbnail
-        function copy(cwd, src, dest) {
-            window.resolveLocalFileSystemURL(src, function(fileEntry) {
-                cwd.getDirectory(dest, {}, function(dirEntry) {
-                    fileEntry.copyTo(dirEntry,
-                        'image_'+ts+'.jpg',
-                        function(f) {
-                            rec.photoURL = f.toURL();
-                            db.setItem(ts, JSON.stringify(rec));
-                            rec.photoURL = src;
-                            if(done) done();
-                            if(index.length>=maxEntries) {
-                                removeRec(index.pop());
-                            }
-                            index.unshift(ts);
-                            db.setItem('index', JSON.stringify(index));
-                        }
-                    );
-                }, errorHandler);
-            }, errorHandler);
+        var oldURL = rec.photoURL;
+        rec.photoURL = getThumbnail(oldURL);
+        db.setItem(ts, JSON.stringify(rec));
+        rec.photoURL = oldURL;
+        if(done) done();
+        if(index.length>=maxEntries) {
+            removeRec(index.pop());
         }
-        var errorHandler = function(err) {
-            alert('儲存紀錄時發生錯誤:(');
-            console.log(JSON.stringify(err));
-        };
-        window.requestFileSystem(window.PERSISTENT, 1024*1024,
-            function(fs) {
-                copy(fs.root, rec.photoURL, '');
-            },
-            errorHandler
-        );
+        index.unshift(ts);
+        db.setItem('index', JSON.stringify(index));
     };
     var clear = function() {
         index.forEach(removeRec);
@@ -52,11 +31,20 @@ var rkView = (function() {
     var removeRec = function(key) {
         var obj = JSON.parse(db[key]);
         db.removeItem(key);
-        window.resolveLocalFileSystemURL(obj.photoURL, function(fileEntry) {
-            fileEntry.remove(function() {
-                console.log('Rec file '+key+' removed.');
-            }, function(err) { console.log('Rec file '+key+' removal error: '+err); });
-        });
+        console.log('Rec '+key+' removed.');
+    };
+    var getThumbnail = function(imgURL) {
+        var img = $('#eventRow img[src="'+imgURL+'"]').get(0);
+        var ratio = img.width>img.height? 200/img.width: 200/img.height;
+        var targetWidth = img.width*ratio;
+        var targetHeight = img.height*ratio;
+        var canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.scale(ratio, ratio);
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+        return canvas.toDataURL();
     };
     return {
         "index": index,
@@ -89,10 +77,6 @@ $(document).on("pagebeforeshow", "#view", function() {
         csPtr.children('[data-role="listview"]').append(list);
         csPtr.attr('data-filtertext', csPtr.attr('data-filtertext')+' '+key);
     });
-    /*container.find('div ul').each(function() {
-        $(this).listview();
-    });*/
-    //container.collapsibleset("refresh");
     container.children(':first').attr('data-collapsed', 'false');
     container.trigger('create');
 });

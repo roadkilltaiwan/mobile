@@ -736,7 +736,7 @@ function upload(events, done, fail) {
                 fileEntry.file(function (file) {
                     var reader = new FileReader();
                     reader.onloadend = function () {
-                        var base64 = this.result.replace(/data:\S*;base64,/, '');
+                        var base64 = this.result.replace(/^data:\S*;base64,/, '');
                         $.ajax({
                             url: 'http://roadkill.tw/phone/drupalgap/file',
                             type: 'POST',
