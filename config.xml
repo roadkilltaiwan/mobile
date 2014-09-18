@@ -1,15 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.mobile" version="0.1.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.mobile" version="0.2.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>Roadkill</name>
     <description>
         Roadkill report powered by Phonegap.
     </description>
-    <author email="cookiej4u@iis.sinica.edu.tw" href="http://roadkill.tw">
+    <author email="cookiej4u@gmail.com" href="http://roadkill.tw">
         TaiRON and IIS Sinica
     </author>
     <content src="index.html" />
     <access origin="*" />
     <preference name="orientation" value="portrait" />
-    <preference name="AndroidPersistentFileLocation" value="Internal" />
-    <preference name="iosPersistentFileLocation" value="Library" />
 </widget>

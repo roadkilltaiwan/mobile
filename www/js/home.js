@@ -723,8 +723,9 @@ function upload(events, done, fail) {
         return true;
     };
     uploadPopup.popup("open");
+    var uploadEndpoint = 'http://roadkill.tw/phone/node/add/image';
     $.ajax({
-        url: 'http://roadkill.tw/phone/node/add/image',
+        url: uploadEndpoint,
         type: 'GET',
         dataType: 'xml',
         beforeSend: addAbortListener,
@@ -735,80 +736,55 @@ function upload(events, done, fail) {
             window.resolveLocalFileSystemURL(ev.photoURL, function (fileEntry) {
                 fileEntry.file(function (file) {
                     var reader = new FileReader();
-                    reader.onloadend = function () {
-                        var base64 = this.result.replace(/^data:\S*;base64,/, '');
+                    reader.onloadend = function (evt) {
+                        var sDate = new Date(ev.time);
+                        try{
+                            form['title'].value = '['+ev.shortAddress+'] '+sDate;
+                            form['body'].value = ev.desc;
+                            form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+                            form['field_data_res[value]'][1].checked = true;
+                            form['field_location_img[0][name]'].value = ev.address;
+                            form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+                            form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+                            form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
+                            form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+                            form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
+                        }catch(err){
+                            console.log('form filling error: '+err);
+                            fail();
+                            return;
+                        }
+                        var fileInput = form.querySelector('#edit-field-imagefield-0-upload');
+                        fileInput.parentNode.removeChild(fileInput);
+                        var formData = new FormData(form);
+                        var fileBlob = new Blob([evt.target.result], { 'type' : file.fileType });
+                        formData.append("files[field_imagefield_0]", fileBlob, file.name);
+                        
                         $.ajax({
-                            url: 'http://roadkill.tw/phone/drupalgap/file',
                             type: 'POST',
-                            dataType: 'json',
-                            data: {
-                                'file': {
-                                    'file': base64,
-                                    'filename': 'image.jpg',
-                                    'uid': rkAuth.db.uid
-                                }
-                            },
-                            beforeSend: function (xhr) {
-                                xhr.setRequestHeader('X-CSRF-Token', rkAuth.db.CSRF_token);
-                                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                                return addAbortListener(xhr);
+                            url: uploadEndpoint,
+                            data: formData,
+                            contentType: false,
+                            processData: false,
+                            beforeSend: addAbortListener
+                        }).done(function () {
+                            if(i<events.length) {
+                                poster(events[i], i+1);
+                                rkView.add(ev);
+                            }else {
+                                state.html(UPLOAD_DONE);
+                                rkView.add(ev, done);
                             }
-                        }).done(function (result) {
-                            var sDate = new Date(ev.time);
-                            try{
-                                form['field_imagefield[0][fid]'].value = result.fid;
-                                //[TODO] file input form post
-                                //formData.append("files[field_imagefield_0]");
-                                form['title'].value = '[' + ev.shortAddress + '] ' + sDate;
-                                form['body'].value = ev.desc;
-                                form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-                                form['field_data_res[value]'][1].checked = true;
-                                form['field_location_img[0][name]'].value = ev.address;
-                                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-                                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-                                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
-                                form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-                                form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
-                            }catch(err){
-                                console.log('form filling error: '+err);
-                                fail();
-                                return;
-                            }
-                            $.ajax({
-                                type: 'POST',
-                                url: 'http://roadkill.tw/phone/node/add/image',
-                                data: new FormData(form),
-                                contentType: false,
-                                processData: false,
-                                beforeSend: addAbortListener
-                            }).done(function () {
-                                if(i<events.length) {
-                                    poster(events[i], i+1);
-                                    rkView.add(ev);
-                                }else {
-                                    state.html(UPLOAD_DONE);
-                                    rkView.add(ev, done);
-                                }
-                            }).fail(function(jqXHR, textStatus, errorThrown) {
-                                state.html(UPLOAD_ABORT);
-                                console.log('Form posting error: '+textStatus);
-                                trimReport(i-1);
-                                if(errorThrown==="abort") {
-                                    //[TODO] Cancel the uploaded image
-                                }else {
-                                    fail();
-                                }
-                            });
                         }).fail(function(jqXHR, textStatus, errorThrown) {
                             state.html(UPLOAD_ABORT);
-                            console.log('File Upload Error: '+textStatus);
+                            console.log('Form posting error: '+textStatus);
                             trimReport(i-1);
                             if(errorThrown!=="abort") {
                                 fail();
                             }
                         });
                     };
-                    reader.readAsDataURL(file);
+                    reader.readAsArrayBuffer(file);
                 });
             });
         };
@@ -897,58 +873,6 @@ function btnUploadPressed(event, ui) {
         alert(UPLOAD_FAILED);
     };
 
-    /*var permissionHandler = function(response) {
-        var groupGranted = response.data.some(function(elem) {
-            return elem["permission"] == "user_groups" &&
-                elem["status"] == "granted";
-        });
-        var publishGranted = response.data.some(function(elem) {
-            return elem["permission"] == "publish_actions" &&
-                elem["status"] == "granted";
-        });
-        if(!publishGranted || !groupGranted) {
-            var request = 'publish_actions';
-            if(!groupGranted) {
-                request += ',user_groups&auth_type=rerequest';
-            }
-            openFB.login(request,
-                function() {
-                    openFB.api({
-                        "path": "/me/permissions",
-                        "success": function(result) {
-                            var checkPublish = result.data.some(function(e) {
-                                return e["permission"]=="publish_actions" &&
-                                    e["status"] == "granted";
-                            });
-                            var checkGroup = result.data.some(function(e) {
-                                return e["permission"]=="user_groups" &&
-                                    e["status"] == "granted";
-                            });
-                            if(!checkPublish || !checkGroup) {
-                                alert(FB_PERMISSION_ERROR);
-                            }else {
-                                showPageBusy(UPLOADING);
-                                upload(events, done, fail);
-                            }
-                        },
-                        "error": function(error) {
-                            if(error.code==190) {
-                                alert(FB_PERMISSION_ERROR);
-                            }else {
-                                alert('Facebook連結錯誤: '+error.message);
-                            }
-                        }
-                    });
-                },
-                function(error) {
-                    alert('Facebook登入錯誤: ' + error.error_description);
-                }
-            );
-        } else {
-            showPageBusy(UPLOADING);
-            upload(events, done, fail);
-        }
-    };*/
     var verifyPost = function(success, cancel) {
         facebookConnectPlugin.api(
             "/me/permissions",
@@ -1002,18 +926,6 @@ function btnUploadPressed(event, ui) {
                 );
             }
         );
-        /*openFB.api(
-            "path": "/me/permissions",
-            "success": permissionHandler,
-            "error": function(error) {
-                if(error.code==190) { //invalid access token
-                    permissionHandler({data:[]});
-                }else {
-                    console.log('failed to connect Facebook: ' + error.message);
-                    fail();
-                }
-            }
-        });*/
     };
     var cancelUpload = function(msg) {
         hidePageBusy();
