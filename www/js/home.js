@@ -777,9 +777,9 @@ function upload(events, done, fail) {
                             }
                         }).fail(function(jqXHR, textStatus, errorThrown) {
                             state.html(UPLOAD_ABORT);
-                            console.log('Form posting error: '+textStatus);
+                            console.log('Form posting: '+textStatus);
                             trimReport(i-1);
-                            if(errorThrown!=="abort") {
+                            if(errorThrown!=="abort" && errorThrown!=="canceled") {
                                 fail();
                             }
                         });
@@ -791,7 +791,7 @@ function upload(events, done, fail) {
         poster(events[0], 1);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         state.html(UPLOAD_ABORT);
-        console.log('Form retrieval error: '+textStatus);
+        console.log('Form retrieval: '+textStatus);
         if(errorThrown!=="abort") {
             fail();
         }
