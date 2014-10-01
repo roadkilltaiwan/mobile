@@ -15,6 +15,9 @@ Android/bin/
 Android/gen/
 Android/assets/
 
+# generated files - android project subfolder
+platforms/*
+
 # generated files
 bin/
 gen/

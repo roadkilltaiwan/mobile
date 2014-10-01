@@ -1,0 +1,95 @@
+/*
+ * This is a manifest file that'll be compiled into application.css, which will include all the files
+ * listed below.
+ *
+ * Any CSS and SCSS file within this directory, lib/assets/stylesheets, vendor/assets/stylesheets,
+ * or vendor/assets/stylesheets of plugins, if any, can be referenced here using a relative path.
+ *
+ * You're free to add application-wide styles to this file and they'll appear at the top of the
+ * compiled file, but it's generally better to create a new file per style scope.
+ *
+ *= require_self
+ *= require jquery.mobile
+ *  
+ */
+
+.text-center {
+	text-align: center;
+	margin: 0 auto 0 auto;
+}
+
+.small-font {
+	font-size: 11px;
+}
+
+.dashed-border {
+	border: 2px dashed gray; 
+}
+
+.rounded-border {
+	border-radius: 10px;
+}
+
+.toolbar {
+	padding: 15px 0 15px 0;
+}
+
+.toolbar-button {
+	padding: 15px 45px 15px 45px;
+}
+
+textarea.simple-border, input.simple-border {
+	overflow: auto;
+	outline: none;
+	-webkit-appearance: none;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+}
+
+img.vcenter {
+  position:absolute;
+  top:0;
+  bottom:0;
+  margin:auto;
+}
+
+.minor-padding {
+  padding: 5px 5px 5px 5px;
+}
+
+.ui-content { 
+  padding: 1em 1em 0 1em;
+}
+
+.rounded-corner {
+  -moz-border-radius: 15px !important;
+  -webkit-border-radius: 15px !important;
+  border-radius: 15px !important;
+}
+
+.pastel-green {
+  background: #d2f4fd !important;
+}
+
+.pastel-pink {
+  background: #ffe0f3 !important;
+}
+
+.pastel-blue {
+  background: #e5f0ff !important;
+}
+
+.pastel-orange {
+	background: #ffe3cf !important;
+}
+
+.horizontal-controlgroup-large {
+	padding-left: 2.75em !important;
+	padding-right: 2.75em !important;
+}
+
+.stay-at-bottom {
+  position:fixed;
+  bottom:0;
+}
