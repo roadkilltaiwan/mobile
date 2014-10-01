@@ -7,10 +7,17 @@ $(document).on("pagecreate", "#setting", function(event) {
         });
         window.location.replace('#logon');
     };
-    var onFail = function(message) {
-        alert('錯誤: ' + message);
+    var onFail = function(jqXHR, textStatus, errorThrown) {
+        console.log('Drupal logout error: ' + textStatus);
         $.mobile.loading('hide');
         $('#logout').prop('disabled', false).removeClass('ui-disabled');
+        if(jqXHR.status===406) { // not logged in
+            window.location.replace('#logon');
+        }else if(jqXHR.status===0) {
+            alert('請檢查網路連線');
+        }else {
+            alert('登出時遇到問題，請稍候再試');
+        }
     };
     function logoutDrupal() {
         $.mobile.loading("show", {

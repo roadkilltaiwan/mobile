@@ -55,8 +55,9 @@ typedef NSUInteger CDVMediaType;
 @property (assign) bool correctOrientation;
 @property (assign) bool saveToPhotoAlbum;
 @property (assign) bool cropToSize;
-@property (strong) UIWebView* webView;
+@property (strong) UIView* webView;
 @property (assign) BOOL popoverSupported;
+@property (assign) BOOL usesGeolocation;
 
 @end
 

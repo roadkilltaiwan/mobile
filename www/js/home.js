@@ -714,11 +714,11 @@ function upload(events, done, fail) {
         btnUpload.prop('disabled', false).removeClass('ui-disabled');
     });
 
-    var addAbortListener = function (xhr) {
+    var addAbortListener = function (req) {
         if(btnCancel.abort) return false;
         btnCancel.off('click').on('click', function() {
             btnCancel.abort = true;
-            xhr.abort();
+            req.abort();
         });
         return true;
     };
@@ -731,6 +731,63 @@ function upload(events, done, fail) {
         beforeSend: addAbortListener,
     }).done(function(response) {
         var form = response.getElementById('node-form');
+        var ccOpt = form['creativecommons[select_license_form][cc_license_uri]'];
+        var formPoster = function(ev, i) {
+            progress.html('('+i+'/'+events.length+')');
+
+            var fileURL = ev.photoURL;
+            var options = new FileUploadOptions();
+            options.fileKey = "files[field_imagefield_0]";
+            options.fileName = fileURL.substr(fileURL.lastIndexOf('/') + 1);
+            var suffix = fileURL.substr(fileURL.lastIndexOf('.') + 1);
+            options.mimeType = 'image/' + ((suffix=='jpg'||suffix=='JPG')? 'jpeg': suffix);
+            options.chunkedMode = true;
+            options.httpMethod = "POST";
+            var sDate = new Date(ev.time);
+            options.params = {
+                'form_build_id': form['form_build_id'].value,
+                'form_token': form['form_token'].value,
+                'form_id': form['form_id'].value,
+                'title': '['+ev.shortAddress+'] '+sDate,
+                'field_app_post_type[value]': ev.fbPostId,
+                'field_data_res[value]': '323',
+                'field_imagefield[0][fid]': '0',
+                'field_imagefield[0][list]': '1',
+                'body': ev.desc,
+                'field_location_img[0][name]': ev.address,
+                'field_location_img[0][locpick][user_latitude]': ev.location.latitude,
+                'field_location_img[0][locpick][user_longitude]': ev.location.longitude,
+                'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
+                'field_access_token[0][value]': rkAuth.db.fbtoken,
+                'creativecommons[select_license_form][cc_license_uri]': ccOpt.querySelector('option[value*="'+ev.license+'/"]').value,
+                'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?'
+            };
+
+            var success = function (result) {
+                if(i<events.length) {
+                    formPoster(events[i], i+1);
+                    rkView.add(ev);
+                }else {
+                    state.html(UPLOAD_DONE);
+                    rkView.add(ev, done);
+                }
+            };
+            var error = function(err) {
+                state.html(UPLOAD_ABORT);
+                console.log('Form posting: '+err.exception);
+                trimReport(i-1);
+                if(err.code!==FileTransferError.ABORT_ERR) {
+                    fail();
+                }
+            };
+
+            var ft = new FileTransfer();
+            if(addAbortListener(ft)) {
+                ft.upload(fileURL, encodeURI(uploadEndpoint), success, error, options);
+            }else {
+                error({ code: FileTransferError.ABORT_ERR, exception: 'early abort' });
+            }
+        };
         var poster = function(ev, i) {
             progress.html('('+i+'/'+events.length+')');
             window.resolveLocalFileSystemURL(ev.photoURL, function (fileEntry) {
@@ -739,6 +796,8 @@ function upload(events, done, fail) {
                     reader.onloadend = function (evt) {
                         var sDate = new Date(ev.time);
                         try{
+                        //var container = form.querySelector('#edit-field-imagefield-0-ahah-wrapper>div');
+                        //container.innerHTML = JSON.parse(result.response.replace(/\\x3c/g, '<').replace(/\\x3e/g, '>')).data;
                             form['title'].value = '['+ev.shortAddress+'] '+sDate;
                             form['body'].value = ev.desc;
                             form['field_app_post_type[value]'][ev.fbPostId].checked = true;
@@ -754,10 +813,10 @@ function upload(events, done, fail) {
                             fail();
                             return;
                         }
+                        var fileBlob = new Blob([evt.target.result], { 'type' : file.type });
                         var fileInput = form.querySelector('#edit-field-imagefield-0-upload');
                         fileInput.parentNode.removeChild(fileInput);
                         var formData = new FormData(form);
-                        var fileBlob = new Blob([evt.target.result], { 'type' : file.fileType });
                         formData.append("files[field_imagefield_0]", fileBlob, file.name);
                         
                         $.ajax({
@@ -788,7 +847,9 @@ function upload(events, done, fail) {
                 });
             });
         };
-        poster(events[0], 1);
+
+        //poster(events[0], 1);
+        formPoster(events[0], 1);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         state.html(UPLOAD_ABORT);
         console.log('Form retrieval: '+textStatus);
@@ -874,72 +935,86 @@ function btnUploadPressed(event, ui) {
     };
 
     var verifyPost = function(success, cancel) {
-        facebookConnectPlugin.api(
-            "/me/permissions",
-            ["user_groups"],
-            function(result) {
-                if(result.data.some(function(e) {
-                    return e.status==="granted" &&
-                        e.permission==="user_groups";
-                })) {
-                    facebookConnectPlugin.api(
-                        "/me/permissions",
-                        ["publish_actions"],
-                        function(result) {
-                            if(result.data.some(function(e) {
-                                return e.status==="granted" &&
-                                    e.permission==="publish_actions";
-                            })) {
-                                facebookConnectPlugin.getLoginStatus(
-                                    function(response) {
-                                        rkAuth.db['fbtoken'] = response.authResponse.accessToken;
-                                        success();
-                                    },
-                                    function(err) {
-                                        console.log(err);
-                                        cancel('fb connect fail');
-                                    }
-                                );
-                            }else cancel(FB_PERMISSION_ERROR);
-                        },
-                        function(err) {
-                            console.log(err);
-                            cancel('fb connect fail');
-                        }
-                    );
-                }else cancel(FB_PERMISSION_ERROR);
-            },
-            function(err) {
-                console.log(err);
-                // workaround for the absense of error fallback on user decline
-                window.setTimeout(cancel, 5000);
-                rkAuth.loginFB(
-                    function() {
-                        showPageBusy(FB_VERIFYING);
-                        btnUpload.prop('disabled', true).addClass('ui-disabled');
-                        verifyPost(success, cancel);
-                    },
-                    function(err) {
-                        console.log(err);
-                        cancel('fb connect fail');
+        var recheck=true;
+        if(!rkAuth.hasAuth(recheck)) {
+            cancel(UPLOAD_FAILED);
+            console.log('invalid session or connection');
+        }else {
+            facebookConnectPlugin.api(
+                "/me/permissions",
+                ["user_groups"],
+                function(result) {
+                    if(result.data.some(function(e) {
+                        return e.status==="granted" &&
+                            e.permission==="user_groups";
+                    })) {
+                        facebookConnectPlugin.api(
+                            "/me/permissions",
+                            ["publish_actions"],
+                            function(result) {
+                                if(result.data.some(function(e) {
+                                    return e.status==="granted" &&
+                                        e.permission==="publish_actions";
+                                    }) &&
+                                    result.data.some(function(e) {
+                                    return e.status==="granted" &&
+                                        e.permission==="user_groups";
+                                })) {
+                                    facebookConnectPlugin.getLoginStatus(
+                                        function(response) {
+                                            rkAuth.db['fbtoken'] = response.authResponse.accessToken;
+                                            success();
+                                        },
+                                        function(err) {
+                                            console.log(err);
+                                            cancel(UPLOAD_FAILED);
+                                        }
+                                    );
+                                }else cancel(FB_PERMISSION_ERROR);
+                            },
+                            function(err) {
+                                console.log(err);
+                                cancel(UPLOAD_FAILED);
+                            }
+                        );
+                    }else cancel(FB_PERMISSION_ERROR);
+                },
+                function(err) {
+                    console.log(err);
+                    if(!err || err.search('session that has been closed')<0) {
+                        cancel(UPLOAD_FAILED);
+                    }else {
+                        // workaround for not raising error on user cancel
+                        window.setTimeout(cancel, 5000);
+                        facebookConnectPlugin.login(
+                            ["user_groups"],
+                            function(response) {
+                                verifyPost(success, cancel);
+                            },
+                            function(err) {
+                                console.log(err);
+                                cancel(UPLOAD_FAILED);
+                            }
+                        );
                     }
-                );
-            }
-        );
+                }
+            );
+        }
     };
     var cancelUpload = function(msg) {
-        hidePageBusy();
+        //hidePageBusy();
         btnUpload.prop('disabled', false).removeClass('ui-disabled');
         if(msg) alert(msg);
     };
     var startUpload = function() {
-        hidePageBusy();
+        //hidePageBusy();
         if(confirm("確定開始上傳？")) {
+            btnUpload.prop('disabled', true).addClass('ui-disabled');
             upload(events, done, fail);
         }else cancelUpload();
     };
 
-    showPageBusy(FB_VERIFYING);
+    //showPageBusy(FB_VERIFYING);
     btnUpload.prop('disabled', true).addClass('ui-disabled');
     var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
     if(publish) {

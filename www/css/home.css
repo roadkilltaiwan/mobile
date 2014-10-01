@@ -6,45 +6,7 @@ img.photo {
   padding: .5em;
   max-width: 80px;
 }
-.gauge {
-  background: #41A3E0;
-  -webkit-border-top-left-radius: 64px;
-  border-top-left-radius: 64px;
-  -webkit-border-top-right-radius: 64px;
-  border-top-right-radius: 64px;
-  display: inline-block;
-  width: 128px;
-  height: 64px;
-  overflow: hidden;
-  position: relative;
-  text-indent: -9999px;
-}
-.gauge::before {
-  -webkit-animation: gauge 4000ms infinite ease;
-  animation: gauge 4000ms infinite ease;
-  background: white;
-  -webkit-border-radius: 4px;
-  border-radius: 4px;
-  content: '';
-  position: absolute;
-  left: 60px;
-  top: 10.66666px;
-  width: 8px;
-  height: 53.33334px;
-  -webkit-transform-origin: 50% 100%;
-  transform-origin: 50% 100%;
-}
-.gauge::after {
-  content: '';
-  background: white;
-  -webkit-border-radius: 16px;
-  border-radius: 16px;
-  position: absolute;
-  left: 51.2px;
-  top: 51.2px;
-  width: 25.6px;
-  height: 25.6px;
-}
+
 @-webkit-keyframes gauge {
   0% {
     -webkit-transform: rotate(-50deg);
@@ -253,3 +215,37 @@ img.photo {
   }
 }
 
+.gauge {
+  background: #41A3E0;
+  border-top-left-radius: 48px;
+  border-top-right-radius: 48px;
+  display: inline-block;
+  width: 96px;
+  height: 48px;
+  overflow: hidden;
+  position: relative;
+  text-indent: -9999px;
+}
+.gauge-ptr {
+  -webkit-animation: gauge 4000ms infinite ease;
+  animation: gauge 4000ms infinite ease;
+  background: white;
+  border-radius: 4px;
+  position: absolute;
+  left: 45px;
+  top: 6px;
+  width: 6px;
+  height: 43px;
+  -webkit-transform-origin: 50% 100%;
+  transform-origin: 50% 100%;
+}
+.gauge::after {
+  content: '';
+  background: white;
+  border-radius: 12px;
+  position: absolute;
+  left: 39px;
+  top: 39px;
+  width: 19.2px;
+  height: 19.2px;
+}

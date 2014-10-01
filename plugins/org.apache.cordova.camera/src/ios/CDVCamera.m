@@ -49,6 +49,13 @@ static NSSet* org_apache_cordova_validArrowDirections;
 
 @synthesize hasPendingOperation, pickerController, locationManager;
 
+
+- (BOOL)usesGeolocation
+{
+    id useGeo = [self.commandDelegate.settings objectForKey:[@"CameraUsesGeolocation" lowercaseString]];
+    return [(NSNumber*)useGeo boolValue];
+}
+
 - (BOOL)popoverSupported
 {
     return (NSClassFromString(@"UIPopoverController") != nil) &&
@@ -75,7 +82,7 @@ static NSSet* org_apache_cordova_validArrowDirections;
     NSString* callbackId = command.callbackId;
     NSArray* arguments = command.arguments;
 
-    self.hasPendingOperation = NO;
+    self.hasPendingOperation = YES;
 
     NSString* sourceTypeString = [arguments objectAtIndex:2];
     UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypeCamera; // default
@@ -121,6 +128,7 @@ static NSSet* org_apache_cordova_validArrowDirections;
     // we need to capture this state for memory warnings that dealloc this object
     cameraPicker.webView = self.webView;
     cameraPicker.popoverSupported = [self popoverSupported];
+    cameraPicker.usesGeolocation = [self usesGeolocation];
 
     cameraPicker.correctOrientation = [[arguments objectAtIndex:8] boolValue];
     cameraPicker.saveToPhotoAlbum = [[arguments objectAtIndex:9] boolValue];
@@ -153,7 +161,7 @@ static NSSet* org_apache_cordova_validArrowDirections;
     } else {
         [self.viewController presentViewController:cameraPicker animated:YES completion:nil];
     }
-    self.hasPendingOperation = YES;
+    self.hasPendingOperation = NO;
 }
 
 - (void)repositionPopover:(CDVInvokedUrlCommand*)command
@@ -306,17 +314,22 @@ static NSSet* org_apache_cordova_validArrowDirections;
                 data = UIImageJPEGRepresentation(returnedImage, 1.0);
             } else {
                 data = UIImageJPEGRepresentation(returnedImage, cameraPicker.quality / 100.0f);
-
-                NSDictionary *controllerMetadata = [info objectForKey:@"UIImagePickerControllerMediaMetadata"];
-                if (controllerMetadata) {
-                    self.data = data;
-                    self.metadata = [[NSMutableDictionary alloc] init];
-                    
-                    NSMutableDictionary *EXIFDictionary = [[controllerMetadata objectForKey:(NSString *)kCGImagePropertyExifDictionary]mutableCopy];
-                    if (EXIFDictionary)	[self.metadata setObject:EXIFDictionary forKey:(NSString *)kCGImagePropertyExifDictionary];
-                    
-                    [[self locationManager] startUpdatingLocation];
-                    return;
+                
+                if (cameraPicker.usesGeolocation) {
+                    NSDictionary *controllerMetadata = [info objectForKey:@"UIImagePickerControllerMediaMetadata"];
+                    if (controllerMetadata) {
+                        self.data = data;
+                        self.metadata = [[NSMutableDictionary alloc] init];
+                        
+                        NSMutableDictionary *EXIFDictionary = [[controllerMetadata objectForKey:(NSString *)kCGImagePropertyExifDictionary]mutableCopy];
+                        if (EXIFDictionary)	[self.metadata setObject:EXIFDictionary forKey:(NSString *)kCGImagePropertyExifDictionary];
+                        
+                        if (IsAtLeastiOSVersion(@"8.0")) {
+                            [[self locationManager] performSelector:NSSelectorFromString(@"requestWhenInUseAuthorization") withObject:nil afterDelay:0];
+                        }
+                        [[self locationManager] startUpdatingLocation];
+                        return;
+                    }
                 }
             }
             
@@ -519,6 +532,10 @@ static NSSet* org_apache_cordova_validArrowDirections;
         scaledSize = CGSizeMake(MIN(width * scaleFactor, targetWidth), MIN(height * scaleFactor, targetHeight));
     }
 
+    // If the pixels are floats, it causes a white line in iOS8 and probably other versions too
+    scaledSize.width = (int)scaledSize.width;
+    scaledSize.height = (int)scaledSize.height;
+    
     UIGraphicsBeginImageContext(scaledSize); // this will resize
 
     [sourceImage drawInRect:CGRectMake(0, 0, scaledSize.width, scaledSize.height)];

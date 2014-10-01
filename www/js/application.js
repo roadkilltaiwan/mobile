@@ -41,11 +41,9 @@ var app = {
                 window.location.replace(nav[i]);
             });
         });
-        var to;
-        if(!rkAuth.init()) {
+        var to = '#home';
+        if(!rkAuth.hasAuth()) {
             to = '#logon';
-        } else {
-            to = '#home';
         }
         window.location.replace(to);
     },
