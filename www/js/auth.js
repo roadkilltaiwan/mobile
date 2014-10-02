@@ -22,6 +22,7 @@ var rkAuth = {
     "setSession": function(result) {
         this.db.setItem("CSRF_token", result.token);
         this.db.setItem("uid", result.user.uid);
+        this.db.setItem("name", result.user.name);
         this.db.setItem("loginTime", result.user.login);
         this.db.setItem("sessName", result.session_name);
         this.db.setItem("sessId", result.sessid);
@@ -31,6 +32,7 @@ var rkAuth = {
         this.db.removeItem('sessId');
         this.db.removeItem('CSRF_token');
         this.db.removeItem('uid');
+        this.db.removeItem('name');
         this.db.removeItem('loginTime');
     },
     "isSessExpired": function() {

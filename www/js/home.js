@@ -760,7 +760,10 @@ function upload(events, done, fail) {
                 'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
                 'field_access_token[0][value]': rkAuth.db.fbtoken,
                 'creativecommons[select_license_form][cc_license_uri]': ccOpt.querySelector('option[value*="'+ev.license+'/"]').value,
-                'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?'
+                'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?',
+                'name': rkAuth.db.name,
+                'status': '1',
+                'promote': '1'
             };
 
             var success = function (result) {
