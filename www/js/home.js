@@ -261,6 +261,7 @@ RkEventRow.prototype.mapViewConfirmed = function(options) {
     this.event.shortAddress = options.location.address.shortaddress;
     this.event.time = options.time.getTime();
     this.locationElement.html(options.location.address.shortaddress);
+    rkreport.updateStorage();
 };
 
 RkEventRow.prototype.mapViewCancelled = function() {
