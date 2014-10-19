@@ -364,8 +364,8 @@ RkEvent.prototype.clear = function() {
     this.desc = null;   
     this.address = null;
     this.shortAddress = null;
-    this.license = null;
-    this.fbPostId = null;
+    //this.license = null;
+    //this.fbPostId = null;
     rkreport.updateStorage();
 };
 
