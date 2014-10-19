@@ -6,246 +6,45 @@ img.photo {
   padding: .5em;
   max-width: 80px;
 }
-
-@-webkit-keyframes gauge {
-  0% {
-    -webkit-transform: rotate(-50deg);
-    transform: rotate(-50deg);
-  }
-
-  10% {
-    -webkit-transform: rotate(20deg);
-    transform: rotate(20deg);
-  }
-
-  20% {
-    -webkit-transform: rotate(60deg);
-    transform: rotate(60deg);
-  }
-
-  24% {
-    -webkit-transform: rotate(60deg);
-    transform: rotate(60deg);
-  }
-
-  40% {
-    -webkit-transform: rotate(-20deg);
-    transform: rotate(-20deg);
-  }
-
-  54% {
-    -webkit-transform: rotate(70deg);
-    transform: rotate(70deg);
-  }
-
-  56% {
-    -webkit-transform: rotate(78deg);
-    transform: rotate(78deg);
-  }
-
-  58% {
-    -webkit-transform: rotate(73deg);
-    transform: rotate(73deg);
-  }
-
-  60% {
-    -webkit-transform: rotate(75deg);
-    transform: rotate(75deg);
-  }
-
-  62% {
-    -webkit-transform: rotate(70deg);
-    transform: rotate(70deg);
-  }
-
-  70% {
-    -webkit-transform: rotate(-20deg);
-    transform: rotate(-20deg);
-  }
-
-  80% {
-    -webkit-transform: rotate(20deg);
-    transform: rotate(20deg);
-  }
-
-  83% {
-    -webkit-transform: rotate(25deg);
-    transform: rotate(25deg);
-  }
-
-  86% {
-    -webkit-transform: rotate(20deg);
-    transform: rotate(20deg);
-  }
-
-  89% {
-    -webkit-transform: rotate(25deg);
-    transform: rotate(25deg);
-  }
-
-  100% {
-    -webkit-transform: rotate(-50deg);
-    transform: rotate(-50deg);
-  }
-}
-@keyframes gauge {
-  0% {
-    -webkit-transform: rotate(-50deg);
-    -moz-transform: rotate(-50deg);
-    -ms-transform: rotate(-50deg);
-    -o-transform: rotate(-50deg);
-    transform: rotate(-50deg);
-  }
-
-  10% {
-    -webkit-transform: rotate(20deg);
-    -moz-transform: rotate(20deg);
-    -ms-transform: rotate(20deg);
-    -o-transform: rotate(20deg);
-    transform: rotate(20deg);
-  }
-
-  20% {
-    -webkit-transform: rotate(60deg);
-    -moz-transform: rotate(60deg);
-    -ms-transform: rotate(60deg);
-    -o-transform: rotate(60deg);
-    transform: rotate(60deg);
-  }
-
-  24% {
-    -webkit-transform: rotate(60deg);
-    -moz-transform: rotate(60deg);
-    -ms-transform: rotate(60deg);
-    -o-transform: rotate(60deg);
-    transform: rotate(60deg);
-  }
-  40% {
-    -webkit-transform: rotate(-20deg);
-    -moz-transform: rotate(-20deg);
-    -ms-transform: rotate(-20deg);
-    -o-transform: rotate(-20deg);
-    transform: rotate(-20deg);
-  }
-
-  54% {
-    -webkit-transform: rotate(70deg);
-    -moz-transform: rotate(70deg);
-    -ms-transform: rotate(70deg);
-    -o-transform: rotate(70deg);
-    transform: rotate(70deg);
-  }
-
-  56% {
-    -webkit-transform: rotate(78deg);
-    -moz-transform: rotate(78deg);
-    -ms-transform: rotate(78deg);
-    -o-transform: rotate(78deg);
-    transform: rotate(78deg);
-  }
-
-  58% {
-    -webkit-transform: rotate(73deg);
-    -moz-transform: rotate(73deg);
-    -ms-transform: rotate(73deg);
-    -o-transform: rotate(73deg);
-    transform: rotate(73deg);
-  }
-  60% {
-    -webkit-transform: rotate(75deg);
-    -moz-transform: rotate(75deg);
-    -ms-transform: rotate(75deg);
-    -o-transform: rotate(75deg);
-    transform: rotate(75deg);
-  }
-
-  62% {
-    -webkit-transform: rotate(70deg);
-    -moz-transform: rotate(70deg);
-    -ms-transform: rotate(70deg);
-    -o-transform: rotate(70deg);
-    transform: rotate(70deg);
-  }
-
-  70% {
-    -webkit-transform: rotate(-20deg);
-    -moz-transform: rotate(-20deg);
-    -ms-transform: rotate(-20deg);
-    -o-transform: rotate(-20deg);
-    transform: rotate(-20deg);
-  }
-
-  80% {
-    -webkit-transform: rotate(20deg);
-    -moz-transform: rotate(20deg);
-    -ms-transform: rotate(20deg);
-    -o-transform: rotate(20deg);
-    transform: rotate(20deg);
-  }
-
-  83% {
-    -webkit-transform: rotate(25deg);
-    -moz-transform: rotate(25deg);
-    -ms-transform: rotate(25deg);
-    -o-transform: rotate(25deg);
-    transform: rotate(25deg);
-  }
-  86% {
-    -webkit-transform: rotate(20deg);
-    -moz-transform: rotate(20deg);
-    -ms-transform: rotate(20deg);
-    -o-transform: rotate(20deg);
-    transform: rotate(20deg);
-  }
-
-  89% {
-    -webkit-transform: rotate(25deg);
-    -moz-transform: rotate(25deg);
-    -ms-transform: rotate(25deg);
-    -o-transform: rotate(25deg);
-    transform: rotate(25deg);
-  }
-
-  100% {
-    -webkit-transform: rotate(-50deg);
-    -moz-transform: rotate(-50deg);
-    -ms-transform: rotate(-50deg);
-    -o-transform: rotate(-50deg);
-    transform: rotate(-50deg);
-  }
-}
-
-.gauge {
-  background: #41A3E0;
-  border-top-left-radius: 48px;
-  border-top-right-radius: 48px;
-  display: inline-block;
-  width: 96px;
-  height: 48px;
-  overflow: hidden;
+div.meter {
+  height: 20px;
+  width: 120px;
   position: relative;
-  text-indent: -9999px;
+  margin: 0px 0px 20px;
+  background: none repeat scroll 0% 0% #555;
+  border-radius: 25px;
+  padding: 10px;
+  box-shadow: 0px -1px 1px rgba(255, 255, 255, 0.3) inset;
 }
-.gauge-ptr {
-  -webkit-animation: gauge 4000ms infinite ease;
-  animation: gauge 4000ms infinite ease;
-  background: white;
-  border-radius: 4px;
-  position: absolute;
-  left: 45px;
-  top: 6px;
-  width: 6px;
-  height: 43px;
-  -webkit-transform-origin: 50% 100%;
-  transform-origin: 50% 100%;
+div.meter > span {
+  width: 0%;
+  display: block;
+  height: 100%;
+  border-radius: 20px 8px 8px 20px;
+  background-color: #2BC253;
+  background-image: linear-gradient(center bottom , #2BC253 37%, #54F054 69%);
+  box-shadow: 0px 2px 9px rgba(255, 255, 255, 0.3) inset, 0px -2px 6px rgba(0, 0, 0, 0.4) inset;
+  position: relative;
+  overflow: hidden;
 }
-.gauge::after {
-  content: '';
-  background: white;
-  border-radius: 12px;
+div.meter > span > div {
   position: absolute;
-  left: 39px;
-  top: 39px;
-  width: 19.2px;
-  height: 19.2px;
+  top: 0px;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent);
+  z-index: 1;
+  background-size: 50px 50px;
+  -webkit-animation: 2s linear 0s normal none infinite running move;
+  border-radius: 20px 8px 8px 20px;
+  overflow: hidden;
+}
+@-webkit-keyframes move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
 }

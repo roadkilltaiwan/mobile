@@ -693,6 +693,7 @@ function viewWidth() {
 }
 
 function upload(events, done, fail) {
+    var meter = uploadPopup.find('div.meter>span');
     var state = uploadPopup.find('h3');
     state.html(UPLOADING);
     var progress = uploadPopup.find('p');
@@ -721,6 +722,7 @@ function upload(events, done, fail) {
         var form = response.getElementById('node-form');
         var ccOpt = form['creativecommons[select_license_form][cc_license_uri]'];
         var formPoster = function(ev, i) {
+            meter.width('0%');
             progress.html('('+i+'/'+events.length+')');
 
             var fileURL = ev.photoURL;
@@ -792,6 +794,14 @@ function upload(events, done, fail) {
             };
 
             var ft = new FileTransfer();
+            ft.onprogress = function(progressEvent) {
+                console.log(JSON.stringify(progressEvent));
+                if (progressEvent.lengthComputable) {
+                    meter.width((progressEvent.loaded/progressEvent.total*100)+'%');
+                }else {
+                    meter.width(meter.width().replace('%','')+1+'%');
+                }
+            };
             if(addAbortListener(ft)) {
                 ft.upload(fileURL, encodeURI('http://roadkill.tw/phone/filefield/ahah/image/field_imagefield/0'), success, error, options);
             }else {
