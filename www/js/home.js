@@ -125,16 +125,6 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
         rkreport.updateStorage();
     }, this));
     this.locationElement = this.rowElement.find(".location");
-    this.licenseSelect = $("#select-cc");
-    this.licenseSelect.on("change", $.proxy(function() {
-        this.event.license = this.licenseSelect.find('option:selected').val();
-        rkreport.updateStorage();
-    }, this));
-    this.fbPostIdSelect = $("#select-fbPostId");
-    this.fbPostIdSelect.on("change", $.proxy(function() {
-        this.event.fbPostId = this.fbPostIdSelect.find('option:selected').val();
-        rkreport.updateStorage();
-    }, this));
     this.btnEdit = this.rowElement.find(".btnEdit");
     this.btnEdit.on("click", $.proxy(this.btnEditPressed, this));
     this.rowNumber = rowNumber;
@@ -364,8 +354,8 @@ RkEvent.prototype.clear = function() {
     this.desc = null;   
     this.address = null;
     this.shortAddress = null;
-    //this.license = null;
-    //this.fbPostId = null;
+    this.license = null;
+    this.fbPostId = null;
     rkreport.updateStorage();
 };
 
@@ -778,10 +768,10 @@ function upload(events, done, fail) {
             };
             var error = function(err) {
                 state.html(UPLOAD_ABORT);
-                console.log('Form posting: '+err.exception);
+                console.log('Form posting '+err.code+': '+err.exception);
                 trimReport(i-1);
                 if(err.code!==FileTransferError.ABORT_ERR) {
-                    fail();
+                    fail(err.http_status);
                 }
             };
 
@@ -792,73 +782,13 @@ function upload(events, done, fail) {
                 error({ code: FileTransferError.ABORT_ERR, exception: 'early abort' });
             }
         };
-        var poster = function(ev, i) {
-            progress.html('('+i+'/'+events.length+')');
-            window.resolveLocalFileSystemURL(ev.photoURL, function (fileEntry) {
-                fileEntry.file(function (file) {
-                    var reader = new FileReader();
-                    reader.onloadend = function (evt) {
-                        var sDate = new Date(ev.time);
-                        try{
-                        //var container = form.querySelector('#edit-field-imagefield-0-ahah-wrapper>div');
-                        //container.innerHTML = JSON.parse(result.response.replace(/\\x3c/g, '<').replace(/\\x3e/g, '>')).data;
-                            form['title'].value = '['+ev.shortAddress+'] '+sDate;
-                            form['body'].value = ev.desc;
-                            form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-                            form['field_data_res[value]'][1].checked = true;
-                            form['field_location_img[0][name]'].value = ev.address;
-                            form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-                            form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
-                            form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
-                            form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-                            form['creativecommons[select_license_form][cc_license_uri]'].value = ev.license;
-                        }catch(err){
-                            console.log('form filling error: '+err);
-                            fail();
-                            return;
-                        }
-                        var fileBlob = new Blob([evt.target.result], { 'type' : file.type });
-                        var fileInput = form.querySelector('#edit-field-imagefield-0-upload');
-                        fileInput.parentNode.removeChild(fileInput);
-                        var formData = new FormData(form);
-                        formData.append("files[field_imagefield_0]", fileBlob, file.name);
-                        
-                        $.ajax({
-                            type: 'POST',
-                            url: uploadEndpoint,
-                            data: formData,
-                            contentType: false,
-                            processData: false,
-                            beforeSend: addAbortListener
-                        }).done(function () {
-                            if(i<events.length) {
-                                poster(events[i], i+1);
-                                rkView.add(ev);
-                            }else {
-                                state.html(UPLOAD_DONE);
-                                rkView.add(ev, done);
-                            }
-                        }).fail(function(jqXHR, textStatus, errorThrown) {
-                            state.html(UPLOAD_ABORT);
-                            console.log('Form posting: '+textStatus);
-                            trimReport(i-1);
-                            if(errorThrown!=="abort" && errorThrown!=="canceled") {
-                                fail();
-                            }
-                        });
-                    };
-                    reader.readAsArrayBuffer(file);
-                });
-            });
-        };
 
-        //poster(events[0], 1);
         formPoster(events[0], 1);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         state.html(UPLOAD_ABORT);
-        console.log('Form retrieval: '+textStatus);
+        console.log('Form retrieval '+jqXHR.status+': '+errorThrown);
         if(errorThrown!=="abort") {
-            fail();
+            fail(jqXHR.status);
         }
     });
 }
@@ -890,10 +820,8 @@ function prepareReport(report) {
         if(eventRow.hasImage) {
             var desc = eventRow.descElement.val();
             event.desc = desc;
-            var license = eventRow.licenseSelect.find("option:selected").val();
-            event.license = license;
-            var fbPostId = eventRow.fbPostIdSelect.find("option:selected").val();
-            event.fbPostId = fbPostId;
+            event.license = rkSetting.license;
+            event.fbPostId = rkSetting.fbPostId;
         }
     }
     return null;
@@ -933,9 +861,13 @@ function btnUploadPressed(event, ui) {
         uploadPopup.popup("close");
         alert(UPLOAD_DONE);
     };
-    var fail = function(xhr, status) {
+    var fail = function(code) {
         uploadPopup.popup("close");
-        alert(UPLOAD_FAILED);
+        if(code===406) {
+            window.location.replace('#logon');
+        }else {
+            alert(UPLOAD_FAILED);
+        }
     };
 
     var verifyPost = function(success, cancel) {
@@ -1073,6 +1005,7 @@ function initUI() {
         if(rkevent.desc) {
             newRow.descElement.html(rkevent.desc);
         }
+/* Move to setting page
         if(rkevent.license!==null) {
             newRow.licenseSelect.find('option').filter(function() {
                 return $(this).val()==rkevent.license;
@@ -1089,6 +1022,7 @@ function initUI() {
         }else {
             //newRow.event.fbPostId = 0; //[TODO] Init from user default
         }
+*/
         eventRows.push(newRow);
     }
     

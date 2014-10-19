@@ -1,4 +1,37 @@
-$(document).on("pagecreate", "#setting", function(event) {
+var rkSetting = {};
+(function() {
+
+    $(document).on("pagecreate", "#setting", function(event) {
+        // model
+        var db = localStorage;
+        var licenseSelect = $('#select-cc');
+        var fbPostIdSelect = $('#select-fbPostId');
+        rkSetting = {
+            license: db.license || licenseSelect.find("option:selected").val(),
+            fbPostId: db.fbPostId || fbPostIdSelect.find("option:selected").val()
+        };
+        licenseSelect.on('change', function() {
+            rkSetting.license = licenseSelect.find("option:selected").val();
+            db['license'] = rkSetting.license;
+        });
+        fbPostIdSelect.on('change', function() {
+            rkSetting.fbPostId = fbPostIdSelect.find("option:selected").val();
+            db['fbPostId'] = rkSetting.fbPostId;
+        });
+
+        // view
+        licenseSelect.find('option').filter(function() {
+            return $(this).val()===rkSetting.license;
+        }).prop('selected', true);
+        licenseSelect.selectmenu('refresh');//trigger('create');
+
+        fbPostIdSelect.find('option').filter(function() {
+            return $(this).val()===rkSetting.fbPostId;
+        }).prop('selected', true);
+        fbPostIdSelect.selectmenu('refresh');//trigger('create');
+    });
+
+    // control
     var onLogout = function(result) {
         $.mobile.loading('hide');
         $(document).on("pagehide", "#setting", function(event) {
@@ -29,5 +62,5 @@ $(document).on("pagecreate", "#setting", function(event) {
         rkAuth.logoutDrupal(onLogout, onFail);
     }
     $('#logout').click(logoutDrupal);
-});
 
+})();
