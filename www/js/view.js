@@ -73,6 +73,8 @@ $(document).on("pagebeforeshow", "#view", function() {
                     '"><img class="vcenter" src="'+ev.photoURL+'"></img>'+
                     '<h4>['+ev.shortAddress+']</h4><p>'+ev.desc+' - 攝於'+
                     new Date(ev.time).toLocaleDateString()+'</p></li>');
+        // The following external browser code is for Android
+        list.click(function() { navigator.app.loadUrl(ev.location, { openExternal:true }); });
         //append to the bottom of the ul in container;
         csPtr.children('[data-role="listview"]').append(list);
         csPtr.attr('data-filtertext', csPtr.attr('data-filtertext')+' '+key);

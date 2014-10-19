@@ -193,9 +193,7 @@ RkEventRow.prototype.retakePhoto = function() {
     rkreport.updateStorage();
 };
 
-RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
-    //var baseurl = window.URL ? window.URL : window.webkitURL;
-    //var imgSrc = baseurl.createObjectURL(blob);
+RkEventRow.prototype.displayPhoto = function(imgSrc, rotation) {
     this.photoElement.attr("src", imgSrc);
     
     var transform = "rotate(" + rotation + "deg)";
@@ -203,7 +201,6 @@ RkEventRow.prototype.displayPhoto = function(imgSrc/*blob*/, rotation) {
         "-webkit-transform": transform,
         "transform:rotate": transform,
     });
-    //hidePageBusy();
 };
 
 RkEventRow.prototype.photoLoaded = function() {
@@ -732,39 +729,58 @@ function upload(events, done, fail) {
             options.fileName = fileURL.substr(fileURL.lastIndexOf('/') + 1);
             var suffix = fileURL.substr(fileURL.lastIndexOf('.') + 1);
             options.mimeType = 'image/' + ((suffix=='jpg'||suffix=='JPG')? 'jpeg': suffix);
-            options.chunkedMode = true;
             options.httpMethod = "POST";
             var sDate = new Date(ev.time);
             options.params = {
                 'form_build_id': form['form_build_id'].value,
                 'form_token': form['form_token'].value,
                 'form_id': form['form_id'].value,
-                'title': '['+ev.shortAddress+'] '+sDate,
-                'field_app_post_type[value]': ev.fbPostId,
-                'field_data_res[value]': '323',
                 'field_imagefield[0][fid]': '0',
                 'field_imagefield[0][list]': '1',
-                'body': ev.desc,
-                'field_location_img[0][name]': ev.address,
-                'field_location_img[0][locpick][user_latitude]': ev.location.latitude,
-                'field_location_img[0][locpick][user_longitude]': ev.location.longitude,
-                'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
-                'field_access_token[0][value]': rkAuth.db.fbtoken,
-                'creativecommons[select_license_form][cc_license_uri]': ccOpt.querySelector('option[value*="'+ev.license+'/"]').value,
-                'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?',
-                'name': rkAuth.db.name,
-                'status': '1',
-                'promote': '1'
             };
 
             var success = function (result) {
-                if(i<events.length) {
-                    formPoster(events[i], i+1);
-                    rkView.add(ev);
-                }else {
-                    state.html(UPLOAD_DONE);
-                    rkView.add(ev, done);
-                }
+                var sDate = new Date(ev.time);
+                var container = form.querySelector('#edit-field-imagefield-0-ahah-wrapper>div');
+                container.innerHTML = JSON.parse(result.response.replace(/\\x3c/g, '<').replace(/\\x3e/g, '>')).data;
+
+                form['title'].value = '['+ev.shortAddress+'] '+sDate;
+                form['body'].value = ev.desc;
+                form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+                form['field_data_res[value]'][1].checked = true;
+                form['field_location_img[0][name]'].value = ev.address;
+                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
+                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
+                form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+                form['creativecommons[select_license_form][cc_license_uri]'].value = ccOpt.querySelector('option[value*="'+ev.license+'/"]').value;
+                
+                $.ajax({
+                    type: 'POST',
+                    url: uploadEndpoint,
+                    data: new FormData(form),
+                    dataType: 'xml',
+                    contentType: false,
+                    processData: false,
+                    beforeSend: addAbortListener
+                }).done(function (response, textStatus, jqXHR) {
+                    ev.location = 'http://roadkill.tw'+$(response).find('a.active').attr('href'); // abusement :P
+                    console.log(ev.location);
+                    if(i<events.length) {
+                        formPoster(events[i], i+1);
+                        rkView.add(ev);
+                    }else {
+                        state.html(UPLOAD_DONE);
+                        rkView.add(ev, done);
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    state.html(UPLOAD_ABORT);
+                    console.log('Form posting '+jqXHR.status+': '+textStatus);
+                    trimReport(i-1);
+                    if(errorThrown!=="abort" && errorThrown!=="canceled") {
+                        fail();
+                    }
+                });
             };
             var error = function(err) {
                 state.html(UPLOAD_ABORT);
@@ -777,12 +793,11 @@ function upload(events, done, fail) {
 
             var ft = new FileTransfer();
             if(addAbortListener(ft)) {
-                ft.upload(fileURL, encodeURI(uploadEndpoint), success, error, options);
+                ft.upload(fileURL, encodeURI('http://roadkill.tw/phone/filefield/ahah/image/field_imagefield/0'), success, error, options);
             }else {
                 error({ code: FileTransferError.ABORT_ERR, exception: 'early abort' });
             }
         };
-
         formPoster(events[0], 1);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         state.html(UPLOAD_ABORT);
@@ -938,19 +953,16 @@ function btnUploadPressed(event, ui) {
         }
     };
     var cancelUpload = function(msg) {
-        //hidePageBusy();
         btnUpload.prop('disabled', false).removeClass('ui-disabled');
         if(msg) alert(msg);
     };
     var startUpload = function() {
-        //hidePageBusy();
         if(confirm("確定開始上傳？")) {
             btnUpload.prop('disabled', true).addClass('ui-disabled');
             upload(events, done, fail);
         }else cancelUpload();
     };
 
-    //showPageBusy(FB_VERIFYING);
     btnUpload.prop('disabled', true).addClass('ui-disabled');
     var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
     if(publish) {
@@ -986,9 +998,7 @@ function initUI() {
     btnUpload = $("#btnUpload");
     btnUpload.on("click", btnUploadPressed);
     editPopup = $("#editPopup");    
-    //editPopup.popup( "option", "transition", "pop" );
-    imgPopup = $("#imgPopup");    
-    //imgPopup.popup( "option", "transition", "pop" );
+    imgPopup = $("#imgPopup");
     uploadPopup = $("#uploadPopup");    
     var elements = $("[id=eventRow]");
     for(var row=0; row<elements.length; row++) {
@@ -1005,24 +1015,6 @@ function initUI() {
         if(rkevent.desc) {
             newRow.descElement.html(rkevent.desc);
         }
-/* Move to setting page
-        if(rkevent.license!==null) {
-            newRow.licenseSelect.find('option').filter(function() {
-                return $(this).val()==rkevent.license;
-            }).prop('selected', true);
-            //newRow.licenseSelect.selectmenu('refresh');
-            newRow.licenseSelect.trigger('create');
-        }else {
-            //newRow.event.license = ""; //[TODO] Init from user default
-        }
-        if(rkevent.fbPostId!==null) {
-            newRow.fbPostIdSelect[0].selectedIndex = rkevent.fbPostId;
-            //newRow.fbPostIdSelect.selectmenu('refresh');
-            newRow.fbPostIdSelect.trigger('create');
-        }else {
-            //newRow.event.fbPostId = 0; //[TODO] Init from user default
-        }
-*/
         eventRows.push(newRow);
     }
     
