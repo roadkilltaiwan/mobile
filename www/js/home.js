@@ -751,8 +751,8 @@ function upload(events, done, fail) {
                 form['field_app_post_type[value]'][ev.fbPostId].checked = true;
                 form['field_data_res[value]'][1].checked = true;
                 form['field_location_img[0][name]'].value = ev.address;
-                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude;
-                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude;
+                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude.toFixed(6);
+                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude.toFixed(6);
                 form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
                 form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
                 form['creativecommons[select_license_form][cc_license_uri]'].value = ccOpt.querySelector('option[value*="'+ev.license+'/"]').value;
