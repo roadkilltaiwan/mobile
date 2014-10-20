@@ -288,10 +288,14 @@ RkEventRow.prototype.takePicture = function() {
                             fileEntry.copyTo(dirEntry,
                                 'IMG_'+(/[^\.]*/.exec(d.toISOString())[0].replace(/:/g, '-'))+'.jpg',
                                 function(f) {
-                                    alert(f.toURL());
                                     that.displayPhoto(f.toURL());
                                     that.event.photoURL = f.toURL();
                                     rkreport.updateStorage();
+                                    if(option.sourceType===navigator.camera.PictureSourceType.CAMERA) {
+                                        fileEntry.remove(function() {
+                                          console.log('File removed - '+src);
+                                        }, errorHandler);
+                                    }
                                 },
                                 errorHandler
                             );
@@ -361,10 +365,11 @@ function RkEvent() {
 }
 
 RkEvent.prototype.clear = function() {
-    if(this.photoURL!==null && this.photoURL.search('cache')>0) {
-        window.resolveLocalFileSystemURL(this.photoURL, function(fileEntry) {
+    if(this.photoURL!==null && this.photoURL.search('cache')>=0) {
+        var url = this.photoURL;
+        window.resolveLocalFileSystemURL(url, function(fileEntry) {
             fileEntry.remove(function() {
-              console.log('File removed.');
+              console.log('File removed - '+url);
             }, function(err) { console.log('File removal error: '+err); });
         });
     }
@@ -735,7 +740,7 @@ function upload(events, done, fail) {
         return true;
     };
     uploadPopup.popup("open");
-    var uploadEndpoint = 'http://roadkill.tw/phone/node/add/image';
+    var uploadEndpoint = host+'/node/add/image';
     $.ajax({
         url: uploadEndpoint,
         type: 'GET',
@@ -760,37 +765,62 @@ function upload(events, done, fail) {
                 'form_build_id': form['form_build_id'].value,
                 'form_token': form['form_token'].value,
                 'form_id': form['form_id'].value,
+                'title': '['+ev.shortAddress+'] '+sDate,
+                'field_app_post_type[value]': ev.fbPostId,
+                'field_data_res[value]': '323',
                 'field_imagefield[0][fid]': '0',
                 'field_imagefield[0][list]': '1',
+                'body': ev.desc,
+                'field_location_img[0][name]': ev.address,
+                'field_location_img[0][locpick][user_latitude]': ev.location.latitude,
+                'field_location_img[0][locpick][user_longitude]': ev.location.longitude,
+                'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
+                'field_access_token[0][value]': rkAuth.db.fbtoken,
+                'creativecommons[select_license_form][cc_license_uri]': ccOpt.querySelector('option[value*="'+ev.license+'/"]').value,
+                'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?',
+                'name': rkAuth.db.name,
+                'status': '1',
+                'promote': '1'
             };
 
             var success = function (result) {
-                var sDate = new Date(ev.time);
-                var container = form.querySelector('#edit-field-imagefield-0-ahah-wrapper>div');
-                container.innerHTML = JSON.parse(result.response.replace(/\\x3c/g, '<').replace(/\\x3e/g, '>')).data;
+                //var sDate = new Date(ev.time);
+                //var container = form.querySelector('#edit-field-imagefield-0-ahah-wrapper');
+                //container.outerHTML = JSON.parse(result.response.replace(/\\x3c/g, '<').replace(/\\x3e/g, '>')).data;
 
-                form['title'].value = '['+ev.shortAddress+'] '+sDate;
+                /*form['title'].value = '['+ev.shortAddress+'] '+sDate;
                 form['body'].value = ev.desc;
-                form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-                form['field_data_res[value]'][1].checked = true;
+                //form['field_app_post_type[value]'][ev.fbPostId].checked = true;
+                //form['field_data_res[value]'][1].checked = true;
+                //console.log(form['field_data_res[value]']);
                 form['field_location_img[0][name]'].value = ev.address;
                 form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude.toFixed(6);
                 form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude.toFixed(6);
-                form['field_img_date[0][value][date]'].value = /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
-                form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
+                form['field_img_date[0][value][date]'].value = /[\d-]*////.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
+                /*form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
                 form['creativecommons[select_license_form][cc_license_uri]'].value = ccOpt.querySelector('option[value*="'+ev.license+'/"]').value;
-                
+                if(form['field_data_res[value]']) {
+                    form['field_data_res[value]'][1].checked = true;
+                }
+                var formData = new FormData(form);
+                if(!form['field_data_res[value]']) {
+                    formData.append('field_data_res[value]', 323);
+                }
+                formData.append('field_app_post_type[value]', ev.fbPostId);
                 $.ajax({
                     type: 'POST',
                     url: uploadEndpoint,
-                    data: new FormData(form),
+                    data: formData,
                     dataType: 'xml',
                     contentType: false,
                     processData: false,
                     beforeSend: addAbortListener
-                }).done(function (response, textStatus, jqXHR) {
-                    ev.location = 'http://roadkill.tw'+$(response).find('a.active').attr('href'); // abusement :P
-                    console.log(ev.location);
+                }).done(function (response, textStatus, jqXHR) {*/
+                    // This is a hack. Some alternative source should fit better e.g. Service3.
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(result.response, "text/xml");
+                    var nodeURL = doc.getElementById('fbconnect-autoconnect-form').getAttribute('action').match(/\/(image|node)\/[0-9]*/)[0];
+                    ev.location = host+nodeURL; // data field abusement :P
                     if(i<events.length) {
                         formPoster(events[i], i+1);
                         rkView.add(ev);
@@ -798,14 +828,14 @@ function upload(events, done, fail) {
                         state.html(UPLOAD_DONE);
                         rkView.add(ev, done);
                     }
-                }).fail(function(jqXHR, textStatus, errorThrown) {
+                /*}).fail(function(jqXHR, textStatus, errorThrown) {
                     state.html(UPLOAD_ABORT);
                     console.log('Form posting '+jqXHR.status+': '+errorThrown);
                     trimReport(i-1);
                     if(errorThrown!=="abort" && errorThrown!=="canceled") {
                         fail();
                     }
-                });
+                });*/
             };
             var error = function(err) {
                 state.html(UPLOAD_ABORT);
@@ -823,7 +853,7 @@ function upload(events, done, fail) {
                 }
             };
             if(addAbortListener(ft)) {
-                ft.upload(fileURL, encodeURI('http://roadkill.tw/phone/filefield/ahah/image/field_imagefield/0'), success, error, options);
+                ft.upload(fileURL, encodeURI(uploadEndpoint/*host+'/filefield/ahah/image/field_imagefield/0'*/), success, error, options);
             }else {
                 error({ code: FileTransferError.ABORT_ERR, exception: 'early abort' });
             }

@@ -2,10 +2,12 @@ var rkSetting = {};
 (function() {
     // model
     var db = localStorage;
-    rkSetting = {
-        license: db.license||'by-sa',
-        fbPostId: db.fbPostId||'0'
-    };
+    $(document).ready(function() {
+        rkSetting = {
+            license: db.license||$('#select-cc').find('option:selected').val(),
+            fbPostId: db.fbPostId||$('#select-fbPostId').find('option:selected').val()
+        };
+    });
     $(document).on("pagecreate", "#setting", function(event) {
         var licenseSelect = $('#select-cc');
         var fbPostIdSelect = $('#select-fbPostId');
