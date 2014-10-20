@@ -115,6 +115,7 @@
 <div id="setting" class="page" data-role="page" data-theme="a">
     <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
         <h1>Roadkill Report!</h1>
+        <a href="#" id="logout" data-icon="action" class="ui-btn-right" data-theme="b">登出</a>
         <div role="navigation" class="ui-navbar" data-role="navbar">
             <ul class="ui-grid-b">
                 <li class="ui-block-a"><a class="ui-link ui-btn ui-icon-grid ui-btn-icon-top" href="#" data-icon="grid">歷史</a></li>
@@ -168,11 +169,6 @@
             <p>在回報時您可以選擇同步發佈到臉書社團，並且以何種身份發表。</p>
         </li>
     </ul>
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
-        <div class="text-center" style="margin: 0 50% 0 50%;">
-            <a id="logout" href="#" class="ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-shadow rounded-corner" style="padding: 20px 50px 20px 50px; margin: 0 -64px;">登出</a>
-        </div>
-    </div>
 </div>
 
 
@@ -197,6 +193,7 @@
 <div id="view" class="page" data-role="page">
     <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
         <h1>Roadkill Report!</h1>
+        <a href="#" id="clearHistory" data-icon="delete" class="ui-btn-right" data-theme="b">清除</a>
         <div role="navigation" class="ui-navbar" data-role="navbar">
             <ul class="ui-grid-b">
                 <li class="ui-block-a"><a class="ui-link ui-btn ui-icon-grid ui-btn-icon-top ui-btn-active ui-state-persist" href="#" data-icon="grid">歷史</a></li>
@@ -210,11 +207,6 @@
             <input data-type="search" id="searchRkView" placeholder="搜尋紀錄…">
         </form>
         <div data-role="collapsibleset" data-filter="true" data-children="> div, > div div ul li" data-inset="false" id="csfilter" data-input="#searchRkView">
-        </div>
-    </div>
-    <div data-role="footer" data-position="fixed" data-tap-toggle="false" style="padding: 5px 0 5px 0">
-        <div class="text-center" style="margin: 0 50% 0 50%;">
-            <a id="clearHistory" href="#" class="ui-btn ui-btn-a ui-btn-inline ui-corner-all ui-shadow rounded-corner" style="padding: 20px 50px 20px 50px; margin: 0 -64px;">清除</a>
         </div>
     </div>
 </div>

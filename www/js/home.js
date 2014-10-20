@@ -795,11 +795,8 @@ function upload(events, done, fail) {
 
             var ft = new FileTransfer();
             ft.onprogress = function(progressEvent) {
-                console.log(JSON.stringify(progressEvent));
-                if (progressEvent.lengthComputable) {
+                if(progressEvent.lengthComputable) {
                     meter.width((progressEvent.loaded/progressEvent.total*100)+'%');
-                }else {
-                    meter.width(meter.width().replace('%','')+1+'%');
                 }
             };
             if(addAbortListener(ft)) {
