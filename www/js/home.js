@@ -273,7 +273,7 @@ RkEventRow.prototype.takePicture = function() {
         var option = {
             destinationType: navigator.camera.DestinationType.FILE_URI,
             sourceType: navigator.camera.PictureSourceType[e.target.id],
-            saveToPhotoAlbum: true,
+            //saveToPhotoAlbum: true,
             correctOrientation: true
         };
         navigator.camera.getPicture(
@@ -282,14 +282,18 @@ RkEventRow.prototype.takePicture = function() {
                 var that = this;
                 function copy(cwd, src, dest) {
                     window.resolveLocalFileSystemURL(src, function(fileEntry) {
-                        cwd.getDirectory(dest, {}, function(dirEntry) {
+                        cwd.getDirectory(dest, {create: !!dest}, function(dirEntry) {
+                            var d = new Date();
+                            d.setTime(d.getTime()-d.getTimezoneOffset()*60*1000);
                             fileEntry.copyTo(dirEntry,
-                                'image_'+(new Date().getTime())+'.jpg',
+                                'IMG_'+(/[^\.]*/.exec(d.toISOString())[0].replace(/:/g, '-'))+'.jpg',
                                 function(f) {
+                                    alert(f.toURL());
                                     that.displayPhoto(f.toURL());
                                     that.event.photoURL = f.toURL();
                                     rkreport.updateStorage();
-                                }
+                                },
+                                errorHandler
                             );
                         }, errorHandler);
                     }, errorHandler);
@@ -298,12 +302,31 @@ RkEventRow.prototype.takePicture = function() {
                     that.hasImage = false;
                     console.log(JSON.stringify(err));
                 };
-                window.requestFileSystem(window.TEMPORARY, 1024*1024,
-                    function(fs) {
-                        copy(fs.root, imgURI, '');
-                    },
-                    errorHandler
-                );
+                if(option.sourceType!==navigator.camera.PictureSourceType.CAMERA) {
+                    window.requestFileSystem(window.TEMPORARY, 1024*1024,
+                        function(fs) {
+                            copy(fs.root, imgURI, '');
+                        },
+                        errorHandler
+                    );
+                }else {
+                    var sd = cordova.file.externalRootDirectory;
+                    if(sd) {
+                        window.resolveLocalFileSystemURL(sd,
+                            function(dirEntry) {
+                                copy(dirEntry, imgURI, 'DCIM/Roadkill');
+                            },
+                            errorHandler
+                        );
+                    }else {
+                        window.requestFileSystem(window.PERSISTENT, 1024*1024,
+                            function(fs) {
+                                copy(fs.root, imgURI, 'DCIM/Roadkill');
+                            },
+                            errorHandler
+                        );
+                    }
+                }
             }, this),
             function(msg) {
                 console.log("Camera Failed: "+msg);
@@ -338,7 +361,7 @@ function RkEvent() {
 }
 
 RkEvent.prototype.clear = function() {
-    if(this.photoURL !== null) {
+    if(this.photoURL!==null && this.photoURL.search('cache')>0) {
         window.resolveLocalFileSystemURL(this.photoURL, function(fileEntry) {
             fileEntry.remove(function() {
               console.log('File removed.');
@@ -777,7 +800,7 @@ function upload(events, done, fail) {
                     }
                 }).fail(function(jqXHR, textStatus, errorThrown) {
                     state.html(UPLOAD_ABORT);
-                    console.log('Form posting '+jqXHR.status+': '+textStatus);
+                    console.log('Form posting '+jqXHR.status+': '+errorThrown);
                     trimReport(i-1);
                     if(errorThrown!=="abort" && errorThrown!=="canceled") {
                         fail();

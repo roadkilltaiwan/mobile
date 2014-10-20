@@ -2,11 +2,9 @@ var rkSetting = {};
 (function() {
     // model
     var db = localStorage;
-    var licenseSelect = $('#select-cc');
-    var fbPostIdSelect = $('#select-fbPostId');
     rkSetting = {
-        license: db.license || licenseSelect.find("option:selected").val(),
-        fbPostId: db.fbPostId || fbPostIdSelect.find("option:selected").val()
+        license: db.license||'by-sa',
+        fbPostId: db.fbPostId||'0'
     };
     $(document).on("pagecreate", "#setting", function(event) {
         var licenseSelect = $('#select-cc');
