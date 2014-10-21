@@ -776,7 +776,7 @@ function upload(events, done, fail) {
                 'field_location_img[0][locpick][user_longitude]': ev.location.longitude.toFixed(6),
                 'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
                 'field_access_token[0][value]': rkAuth.db.fbtoken,
-                'creativecommons[select_license_form][cc_license_uri]': ccOpt.querySelector('option[value*="'+ev.license+'/"]').value,
+                'creativecommons[select_license_form][cc_license_uri]': ev.license? ccOpt.querySelector('option[value*="'+ev.license+'/"]').value: "",
                 'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?',
                 'name': rkAuth.db.name,
                 'status': '1',
