@@ -772,8 +772,8 @@ function upload(events, done, fail) {
                 'field_imagefield[0][list]': '1',
                 'body': ev.desc,
                 'field_location_img[0][name]': ev.address,
-                'field_location_img[0][locpick][user_latitude]': ev.location.latitude,
-                'field_location_img[0][locpick][user_longitude]': ev.location.longitude,
+                'field_location_img[0][locpick][user_latitude]': ev.location.latitude.toFixed(6),
+                'field_location_img[0][locpick][user_longitude]': ev.location.longitude.toFixed(6),
                 'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
                 'field_access_token[0][value]': rkAuth.db.fbtoken,
                 'creativecommons[select_license_form][cc_license_uri]': ccOpt.querySelector('option[value*="'+ev.license+'/"]').value,
@@ -784,58 +784,18 @@ function upload(events, done, fail) {
             };
 
             var success = function (result) {
-                //var sDate = new Date(ev.time);
-                //var container = form.querySelector('#edit-field-imagefield-0-ahah-wrapper');
-                //container.outerHTML = JSON.parse(result.response.replace(/\\x3c/g, '<').replace(/\\x3e/g, '>')).data;
-
-                /*form['title'].value = '['+ev.shortAddress+'] '+sDate;
-                form['body'].value = ev.desc;
-                //form['field_app_post_type[value]'][ev.fbPostId].checked = true;
-                //form['field_data_res[value]'][1].checked = true;
-                //console.log(form['field_data_res[value]']);
-                form['field_location_img[0][name]'].value = ev.address;
-                form['field_location_img[0][locpick][user_latitude]'].value = ev.location.latitude.toFixed(6);
-                form['field_location_img[0][locpick][user_longitude]'].value = ev.location.longitude.toFixed(6);
-                form['field_img_date[0][value][date]'].value = /[\d-]*////.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0];
-                /*form['field_access_token[0][value]'].value = rkAuth.db.fbtoken;
-                form['creativecommons[select_license_form][cc_license_uri]'].value = ccOpt.querySelector('option[value*="'+ev.license+'/"]').value;
-                if(form['field_data_res[value]']) {
-                    form['field_data_res[value]'][1].checked = true;
+                // This is a hack. Some alternative source should fit better e.g. Service3.
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(result.response, "text/xml");
+                var nodeURL = doc.getElementById('fbconnect-autoconnect-form').getAttribute('action').match(/\/(image|node)\/[0-9]*/)[0];
+                ev.location = host+nodeURL; // data field abusement :P
+                if(i<events.length) {
+                    formPoster(events[i], i+1);
+                    rkView.add(ev);
+                }else {
+                    state.html(UPLOAD_DONE);
+                    rkView.add(ev, done);
                 }
-                var formData = new FormData(form);
-                if(!form['field_data_res[value]']) {
-                    formData.append('field_data_res[value]', 323);
-                }
-                formData.append('field_app_post_type[value]', ev.fbPostId);
-                $.ajax({
-                    type: 'POST',
-                    url: uploadEndpoint,
-                    data: formData,
-                    dataType: 'xml',
-                    contentType: false,
-                    processData: false,
-                    beforeSend: addAbortListener
-                }).done(function (response, textStatus, jqXHR) {*/
-                    // This is a hack. Some alternative source should fit better e.g. Service3.
-                    var parser = new DOMParser();
-                    var doc = parser.parseFromString(result.response, "text/xml");
-                    var nodeURL = doc.getElementById('fbconnect-autoconnect-form').getAttribute('action').match(/\/(image|node)\/[0-9]*/)[0];
-                    ev.location = host+nodeURL; // data field abusement :P
-                    if(i<events.length) {
-                        formPoster(events[i], i+1);
-                        rkView.add(ev);
-                    }else {
-                        state.html(UPLOAD_DONE);
-                        rkView.add(ev, done);
-                    }
-                /*}).fail(function(jqXHR, textStatus, errorThrown) {
-                    state.html(UPLOAD_ABORT);
-                    console.log('Form posting '+jqXHR.status+': '+errorThrown);
-                    trimReport(i-1);
-                    if(errorThrown!=="abort" && errorThrown!=="canceled") {
-                        fail();
-                    }
-                });*/
             };
             var error = function(err) {
                 state.html(UPLOAD_ABORT);
@@ -853,7 +813,7 @@ function upload(events, done, fail) {
                 }
             };
             if(addAbortListener(ft)) {
-                ft.upload(fileURL, encodeURI(uploadEndpoint/*host+'/filefield/ahah/image/field_imagefield/0'*/), success, error, options);
+                ft.upload(fileURL, encodeURI(uploadEndpoint), success, error, options);
             }else {
                 error({ code: FileTransferError.ABORT_ERR, exception: 'early abort' });
             }
