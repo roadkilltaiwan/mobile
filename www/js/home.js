@@ -273,7 +273,7 @@ RkEventRow.prototype.takePicture = function() {
         var option = {
             destinationType: navigator.camera.DestinationType.FILE_URI,
             sourceType: navigator.camera.PictureSourceType[e.target.id],
-            //saveToPhotoAlbum: true,
+            saveToPhotoAlbum: true,
             correctOrientation: true
         };
         navigator.camera.getPicture(
@@ -315,21 +315,17 @@ RkEventRow.prototype.takePicture = function() {
                     );
                 }else {
                     var sd = cordova.file.externalRootDirectory;
-                    if(sd) {
-                        window.resolveLocalFileSystemURL(sd,
-                            function(dirEntry) {
-                                copy(dirEntry, imgURI, 'DCIM/Roadkill');
-                            },
-                            errorHandler
-                        );
-                    }else {
-                        window.requestFileSystem(window.PERSISTENT, 1024*1024,
-                            function(fs) {
-                                copy(fs.root, imgURI, 'DCIM/Roadkill');
-                            },
-                            errorHandler
-                        );
-                    }
+                    var internal = imgURI.substr(0, imgURI.lastIndexOf('DCIM/'));
+                    var cwd = imgURI.substr(0, imgURI.lastIndexOf('/')+1);
+                    console.log(sd);
+                    console.log(internal);
+                    console.log(cwd);
+                    window.resolveLocalFileSystemURL(sd||internal||cwd,
+                        function(dirEntry) {
+                            copy(dirEntry, imgURI, 'DCIM/Roadkill');
+                        },
+                        errorHandler
+                    );
                 }
             }, this),
             function(msg) {
