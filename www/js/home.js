@@ -24,6 +24,7 @@ var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
 var FB_VERIFYING = "準備中...";
 var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳號發文，或至[選項]>[在路殺社臉書社團…]，選擇以公用帳號發佈或不要發佈。";
+var APP_VERSION = 'V0.4.1_ANDROID';
 
 /* ui elements */
 var btnUpload;
@@ -776,7 +777,8 @@ function upload(events, done, fail) {
                 'field_author[0][value]': form["field_author[0][value]"]? form["field_author[0][value]"].value: '?',
                 'name': rkAuth.db.name,
                 'status': '1',
-                'promote': '1'
+                'promote': '1',
+                'log': 'APP_'+APP_VERSION
             };
 
             var success = function (result) {
