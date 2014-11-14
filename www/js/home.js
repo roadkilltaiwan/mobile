@@ -136,12 +136,11 @@ function RkEventRow(rowNumber, rowElement, rkevent) {
 
 RkEventRow.prototype.updateLocation = function() {
     mapView.delegate = this;
-    mapView.show({location: this.event.location, address: {longaddress: this.event.address, shortaddress: this.event.shortAddress}, time: new Date(this.event.time)});
+    mapView.show({location: this.event.location, address: this.event.address, time: new Date(this.event.time)});
 };
 
 RkEventRow.prototype.handleAddress = function(address) {
-    this.event.address = address.longaddress;
-    this.event.shortAddress = address.shortaddress;
+    this.event.address = address;
     this.locationElement.html(address.shortaddress);
     rkreport.updateStorage();
     hidePageBusy();
@@ -231,6 +230,8 @@ RkEventRow.prototype.photoLoaded = function() {
                 }
                 if(exifData.location!=null) {
                     this.event.location = exifData.location;
+                    this.event.location.exifLat = exifData.location.latitude;
+                    this.event.location.exifLng = exifData.location.longitude;
                     foundLocationInPhoto = true;
                     sharedLocationManager.getAddress(exifData.location.latitude, exifData.location.longitude, this);
                 }
@@ -245,8 +246,7 @@ RkEventRow.prototype.photoLoaded = function() {
 
 RkEventRow.prototype.mapViewConfirmed = function(options) {
     this.event.location = options.location.coords;
-    this.event.address = options.location.address.longaddress;
-    this.event.shortAddress = options.location.address.shortaddress;
+    this.event.address = options.location.address;
     this.event.time = options.time.getTime();
     this.locationElement.html(options.location.address.shortaddress);
     rkreport.updateStorage();
@@ -356,7 +356,6 @@ function RkEvent() {
     this.location = null;
     this.desc = null;   
     this.address = null;
-    this.shortAddress = null;
     this.license = null;
     this.fbPostId = null;
 }
@@ -375,7 +374,6 @@ RkEvent.prototype.clear = function() {
     this.location = null;
     this.desc = null;   
     this.address = null;
-    this.shortAddress = null;
     this.license = null;
     this.fbPostId = null;
     rkreport.updateStorage();
@@ -444,7 +442,7 @@ MapView.prototype.init = function(mapCanvas) {
     }
     
     if(this.address!=null) {
-        this.locationLabel.html(this.address.shortaddress);
+        this.locationLabel.html(this.address.longaddress);
     }
     
     if(this.time!=null) {
@@ -649,9 +647,10 @@ function parseExif(exif) {
 }
 
 function parseGeocodingResult(response) {
-    var country = null, city = null, locality = null, sublocality = null,
+    var country = null, province = null, locality = null, sublocality = null,
         route = null, poi = null;
     var found = false;
+    console.log(response);
     for(var r in response.results) {
         var result = response.results[r];
         for (var ac in result.address_components) {
@@ -659,12 +658,12 @@ function parseGeocodingResult(response) {
             var types = addressComponent.types;
             for(var t in types) {
                 var type = types[t];
-                if (city==null && (type=="administrative_area_level_2" ||
+                if (province==null && (type=="administrative_area_level_2" ||
                     type=="administrative_area_level_1")) { //e.g. Taipei,Tainan
-                    city = addressComponent.long_name;
+                    province = addressComponent.long_name;
                     break;
                 }
-                else if (locality==null && type=="administrative_area_level_3") {
+                else if (locality==null && type=="administrative_area_level_3" || type=="locality") {
                     locality = addressComponent.long_name;
                     break;
                 }
@@ -685,14 +684,18 @@ function parseGeocodingResult(response) {
         }
     }
     
-    found = city!=null && locality!=null;
+    found = province!=null && locality!=null;
 
     var address = null;
     result = null;
     if (found) {
-        shortAddress = city + locality;
+        shortAddress = province + locality;
         longAddress = shortAddress; 
-        result = {shortaddress: shortAddress};
+        result = {
+            province: province,
+            city: locality,
+            shortaddress: shortAddress
+        };
         if (sublocality!=null) {
             longAddress = longAddress + sublocality;
         }
@@ -762,13 +765,15 @@ function upload(events, done, fail) {
                 'form_build_id': form['form_build_id'].value,
                 'form_token': form['form_token'].value,
                 'form_id': form['form_id'].value,
-                'title': '['+ev.shortAddress+'] '+sDate,
+                'title': '['+ev.address.shortaddress+'] '+sDate,
                 'field_app_post_type[value]': ev.fbPostId,
                 'field_data_res[value]': '323',
                 'field_imagefield[0][fid]': '0',
                 'field_imagefield[0][list]': '1',
                 'body': ev.desc,
-                'field_location_img[0][name]': ev.address,
+                'field_location_img[0][name]': ev.address.longaddress,
+                //'field_location_img[0][city]': ev.address.city,
+                //'field_location_img[0][province]': ev.address.province,
                 'field_location_img[0][locpick][user_latitude]': ev.location.latitude.toFixed(6),
                 'field_location_img[0][locpick][user_longitude]': ev.location.longitude.toFixed(6),
                 'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
@@ -780,7 +785,10 @@ function upload(events, done, fail) {
                 'promote': '1',
                 'log': 'APP_'+APP_VERSION
             };
-
+            if(ev.location.exifLat && ev.location.exifLng) {
+                ev['field_location_img[0][latitude]'] = ev.location.exifLat.toFixed(6);
+                ev['field_location_img[0][longitude]'] = ev.location.exifLng.toFixed(6);
+            }
             var success = function (result) {
                 // This is a hack. Some alternative source should fit better e.g. Service3.
                 var parser = new DOMParser();
@@ -1023,8 +1031,8 @@ function initUI() {
         var element = elements[row];
         var rkevent = rkreport.events[row] || rkreport.createEvent();
         var newRow = new RkEventRow(row, element, rkevent);
-        if(rkevent.shortAddress) {
-            newRow.locationElement.html(rkevent.shortAddress);
+        if(rkevent.address) {
+            newRow.locationElement.html(rkevent.address.shortaddress);
         }
         if(rkevent.photoURL) {
             newRow.displayPhoto(rkevent.photoURL);
