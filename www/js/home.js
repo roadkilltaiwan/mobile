@@ -142,7 +142,8 @@ RkEventRow.prototype.updateLocation = function() {
 
 RkEventRow.prototype.handleAddress = function(address) {
     this.event.address = address;
-    this.locationElement.html(address.shortaddress);
+    var d = new Date(this.event.time);
+    this.locationElement.html(address.shortaddress+'('+d.getMonth()+'/'+d.getDate()+')');
     rkreport.updateStorage();
     hidePageBusy();
 };
@@ -249,7 +250,8 @@ RkEventRow.prototype.mapViewConfirmed = function(options) {
     this.event.location = options.location.coords;
     this.event.address = options.location.address;
     this.event.time = options.time.getTime();
-    this.locationElement.html(options.location.address.shortaddress);
+    var d = new Date(this.event.time);
+    this.locationElement.html(this.event.address.shortaddress+'('+d.getMonth()+'/'+d.getDate()+')');
     rkreport.updateStorage();
 };
 
@@ -656,7 +658,6 @@ function parseGeocodingResult(response) {
     var country = null, province = null, locality = null, sublocality = null,
         route = null, poi = null;
     var found = false;
-    console.log(response);
     for(var r in response.results) {
         var result = response.results[r];
         for (var ac in result.address_components) {
@@ -728,6 +729,7 @@ function viewWidth() {
 
 function upload(events, done, fail) {
     var meter = uploadPopup.find('div.meter>span');
+    meter.width('0%');
     var state = uploadPopup.find('h3');
     state.html(UPLOADING);
     var progress = uploadPopup.find('p');
@@ -799,7 +801,9 @@ function upload(events, done, fail) {
                 // This is a hack. Some alternative source should fit better e.g. Service3.
                 var parser = new DOMParser();
                 var doc = parser.parseFromString(result.response, "text/xml");
-                var nodeURL = doc.getElementById('fbconnect-autoconnect-form').getAttribute('action').match(/\/(image|node)\/[0-9]*/)[0];
+                //var nodeURL = doc.getElementById('fbconnect-autoconnect-form').getAttribute('action').match(/\/(image|node)\/[0-9]*/)[0];
+                var nodeURL = doc.getElementById('comment-form').getAttribute('action');
+                nodeURL = '/node'+nodeURL.substr(nodeURL.lastIndexOf('/'));
                 ev.location = host+nodeURL; // data field abusement :P
                 if(i<events.length) {
                     formPoster(events[i], i+1);
@@ -1048,7 +1052,8 @@ function initUI() {
         var rkevent = rkreport.events[row] || rkreport.createEvent();
         var newRow = new RkEventRow(row, element, rkevent);
         if(rkevent.address) {
-            newRow.locationElement.html(rkevent.address.shortaddress);
+            var d = new Date(rkevent.time);
+            newRow.locationElement.html(rkevent.address.shortaddress+'('+d.getMonth()+'/'+d.getDate()+')');
         }
         if(rkevent.photoURL) {
             newRow.displayPhoto(rkevent.photoURL);
