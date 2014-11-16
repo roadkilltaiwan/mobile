@@ -282,39 +282,31 @@ RkEventRow.prototype.takePicture = function() {
             $.proxy(function(imgURI) {
                 this.hasImage = true;
                 var that = this;
-                function copy(cwd, src, dest) {
-                    window.resolveLocalFileSystemURL(src, function(fileEntry) {
-                        cwd.getDirectory(dest, {create: !!dest}, function(dirEntry) {
-                            var d = new Date();
-                            d.setTime(d.getTime()-d.getTimezoneOffset()*60*1000);
-                            fileEntry.copyTo(dirEntry,
-                                'IMG_'+(/[^\.]*/.exec(d.toISOString())[0].replace(/:/g, '-'))+'.jpg',
-                                function(f) {
-                                    that.displayPhoto(f.toURL());
-                                    that.event.photoURL = f.toURL();
-                                    rkreport.updateStorage();
-                                    if(option.sourceType===navigator.camera.PictureSourceType.CAMERA) {
-                                        fileEntry.remove(function() {
-                                          console.log('File removed - '+src);
-                                        }, errorHandler);
-                                    }
-                                },
-                                errorHandler
-                            );
-                        }, errorHandler);
-                    }, errorHandler);
-                }
+                var cachePhoto = function(src) {
+                    window.requestFileSystem(window.TEMPORARY, 1024*1024,
+                        function(fs) {
+                            window.resolveLocalFileSystemURL(src, function(fileEntry) {
+                                var d = new Date();
+                                fileEntry.copyTo(fs.root,
+                                    d.getTime()+'.jpg',
+                                    function(f) {
+                                        that.displayPhoto(f.toURL());
+                                        that.event.photoURL = f.toURL();
+                                        rkreport.updateStorage();
+                                    },
+                                    errorHandler
+                                );
+                            }, errorHandler);
+                        },
+                        errorHandler
+                    );
+                };
                 var errorHandler = function(err) {
                     that.hasImage = false;
                     console.log(JSON.stringify(err));
                 };
                 if(option.sourceType!==navigator.camera.PictureSourceType.CAMERA) {
-                    window.requestFileSystem(window.TEMPORARY, 1024*1024,
-                        function(fs) {
-                            copy(fs.root, imgURI, '');
-                        },
-                        errorHandler
-                    );
+                    cachePhoto(imgURI);
                 }else {
                     var sd = cordova.file.externalRootDirectory;
                     var internal = imgURI.substr(0, imgURI.lastIndexOf('DCIM/'));
@@ -323,8 +315,20 @@ RkEventRow.prototype.takePicture = function() {
                     console.log(internal);
                     console.log(cwd);
                     window.resolveLocalFileSystemURL(sd||internal||cwd,
-                        function(dirEntry) {
-                            copy(dirEntry, imgURI, 'DCIM/Roadkill');
+                        function(root) {
+                            window.resolveLocalFileSystemURL(imgURI, function(fileEntry) {
+                                root.getDirectory('DCIM/Roadkill', {create: true}, function(dirEntry) {
+                                    var d = new Date();
+                                    d.setTime(d.getTime()-d.getTimezoneOffset()*60*1000);
+                                    fileEntry.moveTo(dirEntry,
+                                        'IMG_'+(/[^\.]*/.exec(d.toISOString())[0].replace(/:/g, '-'))+'.jpg',
+                                        function(f) {
+                                            cachePhoto(f.toURL());
+                                        },
+                                        errorHandler
+                                    );
+                                }, errorHandler);
+                            }, errorHandler);
                         },
                         errorHandler
                     );
@@ -525,6 +529,7 @@ MapView.prototype.show = function(options) {
 
 MapView.prototype.dismiss = function() {
     var options = {
+        changeHash: false,
         transition: "slide",
         reverse: true
     };
