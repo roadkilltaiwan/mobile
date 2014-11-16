@@ -3,22 +3,24 @@ var host = 'http://roadkill.tw/phone';
 var baseURL = host+"/drupalgap/";
 var rkAuth = {
     "db": localStorage,
-    "init": function(storage) {
-        var ready = false;
-        if(storage) this.db = storage;
-        return this.hasAuth();
-    },
-    "hasAuth": function(recheck) {
+    "checkAuth": function(done, fail, forceUpdate) {
         var xhr = new XMLHttpRequest();
-        try {
-            xhr.open('POST', baseURL+'system/connect', false);
-            xhr.withCredentials = true;
-            xhr.send();
-            return JSON.parse(xhr.responseText).user.uid>0;
-        }catch(err) {
-            console.log('Checking session failed: '+err);
-            return !recheck && !this.isSessExpired();
-        }
+        xhr.open('POST', baseURL+'system/connect');
+        xhr.withCredentials = true;
+        xhr.timeout = 10000;
+        xhr.onreadystatechange = function() {
+            if(this.readyState===4) {
+                try {
+                    if(this.status===200) {
+                        JSON.parse(this.responseText).user.uid? done(): fail('not login');
+                    }else throw this.status+this.statusText;
+                }catch(err) {
+                    console.log('Checking session failed: '+err);
+                    !forceUpdate? done(): fail();
+                }
+            }
+        };
+        xhr.send();
     },
     "setSession": function(result) {
         this.db.setItem("CSRF_token", result.token);
@@ -38,8 +40,12 @@ var rkAuth = {
     },
     "isSessExpired": function() {
         var duration = 21; // roughly days
-        var expTime = (this.db.loginTime+duration*86400)*1000;
-        return !this.db.loginTime || expTime<new Date().getTime();
+        if(!this.db.loginTime) {
+            return true;
+        }else {
+            var expTime = (this.db.loginTime+duration*86400)*1000;
+            return expTime<new Date().getTime();
+        }
     },
     "loginDrupal": function(name, pwd, done, fail) {
         var dataUse = { username: name, password: pwd };

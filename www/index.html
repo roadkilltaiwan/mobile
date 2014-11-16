@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="./css/jquery.mobile-1.4.3.css">
+<link rel="stylesheet" media="screen" href="./css/splash.css">
 <link rel="stylesheet" media="screen" href="./css/home.css">
 <link rel="stylesheet" media="all" href="./css/application.css">
 <link rel="stylesheet" media="screen" href="./css/view.css">
@@ -222,13 +223,16 @@
             <form method="post">
                 <input type="text" id="username" placeholder="TaiRON帳號"/>
                 <input type="password" id="password" placeholder="TaiRON密碼"/>
-                <p>登入使用表示您已閱讀並同意路殺社APP的<a href="#contract">隱私權政策</a>。</p>
-                <a href="#" id="login" data-role="button" data-icon="carat-r" data-iconpos="right" >繼續</a>
+                <p>關於路殺社APP的<a href="#contract">隱私權政策</a>：</p>
+                <a href="#" id="login" data-role="button" data-icon="carat-r" data-iconpos="right">同意並繼續</a>
             </form>
         </div>
-
     </div>
-</div> <!--logon-->
+    <div data-role="footer" class="ui-footer" data-position="fixed" data-theme="b">
+        <h1><a href="http://roadkill.tw">路殺社 TaiRON</a> with <a href="http://www.iis.sinica.edu.tw/">IIS Sinica</a></h1>
+    </div>
+</div>
+<!--logon-->
 
 <div data-role="page" id="contract">
     <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">

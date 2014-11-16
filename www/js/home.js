@@ -22,6 +22,7 @@ var PICK_DATE = "請選拍攝日期";
 var PROCESSING = "處理中...";
 var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
+var REGAIN_SESSION = "驗證時效已過，請重新登入";
 var FB_VERIFYING = "準備中...";
 var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳號發文，或至[選項]>[在路殺社臉書社團…]，選擇以公用帳號發佈或不要發佈。";
 var APP_VERSION = 'V0.4.1_ANDROID';
@@ -912,77 +913,87 @@ function btnUploadPressed(event, ui) {
     };
 
     var verifyPost = function(success, cancel) {
-        var recheck=true;
-        if(!rkAuth.hasAuth(recheck)) {
-            cancel(UPLOAD_FAILED);
-            console.log('invalid session or connection');
-        }else {
-            facebookConnectPlugin.api(
-                "/me/permissions",
-                ["user_groups"],
-                function(result) {
-                    if(result.data.some(function(e) {
-                        return e.status==="granted" &&
-                            e.permission==="user_groups";
-                    })) {
-                        facebookConnectPlugin.api(
-                            "/me/permissions",
-                            ["publish_actions"],
-                            function(result) {
-                                if(result.data.some(function(e) {
-                                    return e.status==="granted" &&
-                                        e.permission==="publish_actions";
-                                    }) &&
-                                    result.data.some(function(e) {
-                                    return e.status==="granted" &&
-                                        e.permission==="user_groups";
-                                })) {
-                                    facebookConnectPlugin.getLoginStatus(
-                                        function(response) {
-                                            rkAuth.db['fbtoken'] = response.authResponse.accessToken;
-                                            success();
-                                        },
-                                        function(err) {
-                                            console.log(err);
-                                            cancel(UPLOAD_FAILED);
-                                        }
-                                    );
-                                }else cancel(FB_PERMISSION_ERROR);
-                            },
-                            function(err) {
-                                console.log(err);
-                                cancel(UPLOAD_FAILED);
-                            }
-                        );
-                    }else cancel(FB_PERMISSION_ERROR);
-                },
-                function(err) {
-                    console.log(err);
-                    if(!err || err.search('session that has been closed')<0) {
-                        cancel(UPLOAD_FAILED);
-                    }else {
-                        // workaround for not raising error on user cancel
-                        window.setTimeout(cancel, 5000);
-                        facebookConnectPlugin.login(
-                            ["user_groups"],
-                            function(response) {
-                                verifyPost(success, cancel);
-                            },
-                            function(err) {
-                                console.log(err);
-                                cancel(UPLOAD_FAILED);
-                            }
-                        );
+        showPageBusy(FB_VERIFYING);
+        var forceUpdate = true;
+        rkAuth.checkAuth(
+            function() {
+                facebookConnectPlugin.api(
+                    "/me/permissions",
+                    ["user_groups"],
+                    function(result) {
+                        if(result.data.some(function(e) {
+                            return e.status==="granted" &&
+                                e.permission==="user_groups";
+                        })) {
+                            facebookConnectPlugin.api(
+                                "/me/permissions",
+                                ["publish_actions"],
+                                function(result) {
+                                    if(result.data.some(function(e) {
+                                        return e.status==="granted" &&
+                                            e.permission==="publish_actions";
+                                        }) &&
+                                        result.data.some(function(e) {
+                                        return e.status==="granted" &&
+                                            e.permission==="user_groups";
+                                    })) {
+                                        facebookConnectPlugin.getLoginStatus(
+                                            function(response) {
+                                                rkAuth.db['fbtoken'] = response.authResponse.accessToken;
+                                                success();
+                                            },
+                                            function(err) {
+                                                console.log(err);
+                                                cancel(UPLOAD_FAILED);
+                                            }
+                                        );
+                                    }else cancel(FB_PERMISSION_ERROR);
+                                },
+                                function(err) {
+                                    console.log(err);
+                                    cancel(UPLOAD_FAILED);
+                                }
+                            );
+                        }else cancel(FB_PERMISSION_ERROR);
+                    },
+                    function(err) {
+                        console.log(err);
+                        if(!err || err.search('session that has been closed')<0) {
+                            cancel(UPLOAD_FAILED);
+                        }else {
+                            // workaround for not raising error on user cancel
+                            window.setTimeout(cancel, 5000);
+                            facebookConnectPlugin.login(
+                                ["user_groups"],
+                                function(response) {
+                                    verifyPost(success, cancel);
+                                },
+                                function(err) {
+                                    console.log(err);
+                                    cancel(UPLOAD_FAILED);
+                                }
+                            );
+                        }
                     }
-                }
-            );
-        }
+                );
+            },
+            function(err) {
+                if(err==='not login') {
+                    cancel(REGAIN_SESSION);
+                    window.location.replace('#logon');
+                }else cancel(UPLOAD_FAILED);
+                console.log('invalid session or connection');
+            },
+            forceUpdate
+        );
     };
     var cancelUpload = function(msg) {
+        hidePageBusy();
         btnUpload.prop('disabled', false).removeClass('ui-disabled');
         if(msg) alert(msg);
     };
     var startUpload = function() {
+        hidePageBusy();
         if(confirm("確定開始上傳？")) {
             btnUpload.prop('disabled', true).addClass('ui-disabled');
             upload(events, done, fail);

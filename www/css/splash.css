@@ -1,0 +1,10 @@
+#splash {
+  height: 100%;
+}
+#splash > div {
+  background-image: url('../img/logo.png');
+  background-size: contain;
+  background-position: center center;
+  height: 100%;
+  background-repeat: no-repeat;
+}

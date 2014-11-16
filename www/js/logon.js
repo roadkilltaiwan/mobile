@@ -1,8 +1,9 @@
 $(document).on("pagecreate", "#logon", function(event) {
+    var btnLogin = $('#login');
     var onLogin = function(result) {
         $(document).on("pageshow", "#home", function(event) {
             $(document).off("pageshow", "#home");
-            $('#login').prop('disabled', false).removeClass('ui-disabled');
+            btnLogin.prop('disabled', false).removeClass('ui-disabled');
             var options = {
                 y: "50"
             };
@@ -13,7 +14,7 @@ $(document).on("pagecreate", "#logon", function(event) {
         $.mobile.loading('hide');
         window.location.replace('#home');
     };
-    function loginDrupal(e){
+    function loginDrupal(e) {
         e.preventDefault();
         var id = $('#username').val();
         var pass = $('#password').val();
@@ -25,7 +26,7 @@ $(document).on("pagecreate", "#logon", function(event) {
                 textVisible: true,
                 theme: "c"
             });
-            $('#login').prop('disabled', true).addClass('ui-disabled');
+            btnLogin.prop('disabled', true).addClass('ui-disabled');
             rkAuth.loginDrupal(id, pass, onLogin, onFail);
         }
     }
@@ -40,8 +41,13 @@ $(document).on("pagecreate", "#logon", function(event) {
         }
         console.log('Drupal login error '+code+': '+errorThrown);
         $.mobile.loading('hide');
-        $('#login').prop('disabled', false).removeClass('ui-disabled');
+        btnLogin.prop('disabled', false).removeClass('ui-disabled');
     };
-    $('#login').click(loginDrupal);
+    btnLogin.click(loginDrupal);
+    $('#logon div h1 a').click(function(e) {
+        e.preventDefault();
+        e.target.blur();
+        navigator.app.loadUrl(e.target.href, { openExternal:true });
+    });
 });
 

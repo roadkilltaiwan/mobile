@@ -41,11 +41,14 @@ var app = {
                 window.location.replace(nav[i]);
             });
         });
-        var to = '#home';
-        if(!rkAuth.hasAuth()) {
-            to = '#logon';
-        }
-        window.location.replace(to);
+        rkAuth.checkAuth(
+            function() {
+                window.location.replace('#home');
+            },
+            function(err) {
+                window.location.replace(err==='not login'? '#logon': '#home');
+            }
+        );
     },
     // Update DOM on a Received Event
     receivedEvent: function(id) {
