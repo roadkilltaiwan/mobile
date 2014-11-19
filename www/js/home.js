@@ -25,7 +25,7 @@ var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
 var REGAIN_SESSION = "驗證時效已過，請重新登入";
 var FB_VERIFYING = "準備中...";
 var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳號發文，或至[選項]>[在路殺社臉書社團…]，選擇以公用帳號發佈或不要發佈。";
-var APP_VERSION = 'V0.4.1_ANDROID';
+var APP_VERSION = 'V0.4.2_ANDROID';
 
 /* ui elements */
 var btnUpload;
