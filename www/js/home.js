@@ -536,6 +536,7 @@ MapView.prototype.dismiss = function() {
         reverse: true
     };
     $.mobile.pageContainer.pagecontainer("change", "#home", options);
+    window.history.back();
 };
 
 MapView.prototype.btnConfirmLocationPressed = function(event, ui) {
