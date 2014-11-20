@@ -671,7 +671,7 @@ function parseGeocodingResult(response) {
                     province = addressComponent.long_name;
                     break;
                 }
-                else if (locality==null && type=="administrative_area_level_3" || type=="locality") {
+                else if ((locality==null && type=="locality") || type=="administrative_area_level_3") {
                     locality = addressComponent.long_name;
                     break;
                 }
@@ -717,12 +717,6 @@ function parseGeocodingResult(response) {
     }
     return result;
 }
-
-function btnGetLocationPressed(event, ui) {
-    event.preventDefault();
-    getLocation(true);
-};
-
 
 function viewWidth() {
     return $(window).width() - 40;
