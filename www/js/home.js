@@ -530,9 +530,12 @@ MapView.prototype.show = function(options) {
         this.location = options.location;
         this.address = options.address;
         this.time = options.time;
+        this.locationLabel.html(this.address.longaddress);
+        this.dateLabel.html(this.time.toLocaleDateString());
         if(this.map!=null) {
             var center = new google.maps.LatLng(this.location.latitude, this.location.longitude);
             this.map.panTo(center);
+            this.placeMarker(center);
         }
     }
     else {
