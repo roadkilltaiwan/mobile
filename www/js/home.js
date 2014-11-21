@@ -8,10 +8,11 @@ var DEFAULT_MAP_CENTER = {lat: 23.97565, lng: 120.973882};
 var LOCATION_ERROR_MESSAGE = "無法定位";
 var LOCATION_SERVICE_INTERRUPTED = "請手動標記位置";
 var GETTING_LOCATION_MESSAGE = "定位中...";
-var LOCATION_SERVICE_UNAVAILABLE = "手機或瀏覽器不具備定位功能，或定位功能尚未啟用";
+var LOCATION_SERVICE_UNAVAILABLE = "手機不具備定位功能，或定位功能尚未啟用";
 var GEOCODING_SERVICE_UNAVAILABLE = "無法取得地址";
 var PHOTO_UNAVAILABLE = "請先拍照記錄";
-var LOCATION_SERVICE_DENIED = "請允許網站使用定位服務";
+var LOCATION_SERVICE_DENIED = "請允許使用定位服務";
+var LOCATION_SOURCE_ENABLE = '請啟用裝置定位或調整模式';
 var CHINESE_DIGITS = ['一', '二', '三'];
 var UPLOAD_DONE = "上傳成功!";
 var UPLOAD_FAILED = "無法上傳，請稍後再試";
@@ -24,7 +25,7 @@ var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
 var REGAIN_SESSION = "驗證時效已過，請重新登入";
 var FB_VERIFYING = "準備中...";
-var FB_PERMISSION_ERROR = "請重新上傳並同意路殺社APP使用您的帳號發文，或至[選項]>[在路殺社臉書社團…]，選擇以公用帳號發佈或不要發佈。";
+var FB_PERMISSION_ERROR = "請允許路殺社APP使用您的帳號發文，或至選項內改以公用帳號發佈或不要發佈。";
 var APP_VERSION = 'V0.4.2_ANDROID';
 
 /* ui elements */
@@ -159,11 +160,26 @@ RkEventRow.prototype.handleLocation = function(location) {
 };
 
 RkEventRow.prototype.handleLocationError = function(error) {
-    this.locationElement.html(LOCATION_ERROR_MESSAGE);
     hidePageBusy();
-    if(error.code==LocationManager.PERMISSION_DENIED) {
-        alert(LOCATION_SERVICE_DENIED);
-    }else console.log(error.code+': '+error.message);
+    switch (error.code) {
+        case LocationManager.PERMISSION_DENIED:
+        case LocationManager.POSITION_UNAVAILABLE:
+        case LocationManager.TIMEOUT:
+            this.locationElement.html(LOCATION_ERROR_MESSAGE);
+            if(window.confirm(LOCATION_SOURCE_ENABLE)) {
+                window.plugins.webintent.startActivity({
+                    action: 'android.settings.LOCATION_SOURCE_SETTINGS'},
+                    function() { console.log('Start location source setting intent.')},
+                    function() { console.log('Failed to start location source setting intent.'); }
+                );
+            }
+            break;
+        case LocationManager.GEOCODING_REQUEST_FAILED:
+            this.locationElement.html(GEOCODING_SERVICE_UNAVAILABLE);
+    }
+    var d = new Date(this.event.time);
+    this.locationElement.html(this.locationElement.html()+'('+d.getMonth()+'/'+d.getDate()+')');
+    console.log(error.code+': '+error.message);
 };
 
 RkEventRow.prototype.deletePhoto = function() {

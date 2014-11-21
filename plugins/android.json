@@ -43,6 +43,10 @@
                         {
                             "xml": "<feature name=\"FileTransfer\"><param name=\"android-package\" value=\"org.apache.cordova.filetransfer.FileTransfer\" /></feature>",
                             "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"WebIntent\"><param name=\"android-package\" value=\"com.borismus.webintent.WebIntent\" /></feature>",
+                            "count": 1
                         }
                     ]
                 }
@@ -107,6 +111,9 @@
             "PACKAGE_NAME": "com.mobile"
         },
         "org.apache.cordova.file-transfer": {
+            "PACKAGE_NAME": "com.mobile"
+        },
+        "com.borismus.webintent": {
             "PACKAGE_NAME": "com.mobile"
         }
     },
