@@ -1,6 +1,7 @@
 (function() {
 
 var LOCATION_SERVICE_TIMEOUT = 10000;
+var LOCATION_TEST_TIMEOUT = 5000;
 var HTTP_REQUEST_TIMEOUT = 10000;
 var GOOGLE_MAPS_API_URL = "http://maps.googleapis.com/maps/api/geocode/json?language=zh-TW&sensor=true&latlng=";
 var CAMERA_IMAGE = "./img/camera.png";
@@ -12,7 +13,8 @@ var LOCATION_SERVICE_UNAVAILABLE = "手機不具備定位功能，或定位功�
 var GEOCODING_SERVICE_UNAVAILABLE = "無法取得地址";
 var PHOTO_UNAVAILABLE = "請先拍照記錄";
 var LOCATION_SERVICE_DENIED = "請允許使用定位服務";
-var LOCATION_SOURCE_ENABLE = '請啟用裝置定位或調整模式';
+var LOCATION_SOURCE_ENABLE = '請啟用裝置定位';
+var LOCATION_USE_CURRENT = '照片未含定位資訊，是否使用現在位置？';
 var CHINESE_DIGITS = ['一', '二', '三'];
 var UPLOAD_DONE = "上傳成功!";
 var UPLOAD_FAILED = "無法上傳，請稍後再試";
@@ -96,6 +98,29 @@ LocationManager.prototype.getAddress = function(lat, lng, callback) {
     
 };
 
+LocationManager.prototype.testGPS = function() {
+    var that = this;
+    that.hasAccessToGPS = false;
+    navigator.geolocation.getCurrentPosition(
+        function() {
+            that.hasAccessToGPS = true;
+            console.log('GPS test success');
+        },
+        function() {
+            that.hasAccessToGPS = false;
+            if(window.confirm(LOCATION_SOURCE_ENABLE)) {
+                window.plugins.webintent.startActivity({
+                    action: 'android.settings.LOCATION_SOURCE_SETTINGS'},
+                    function() { console.log('Start location source setting intent.')},
+                    function() { console.log('Failed to start location source setting intent.'); }
+                );
+            }
+            console.log('GPS test failed');
+        },
+        {enableHighAccuracy: false, maximumAge: 0, timeout: LOCATION_TEST_TIMEOUT}
+    );
+};
+
 LocationManager.prototype.getLocation = function(callback) {
     if (navigator.geolocation) {
         if(callback.locationRequestStarted!=null) {
@@ -162,17 +187,12 @@ RkEventRow.prototype.handleLocation = function(location) {
 RkEventRow.prototype.handleLocationError = function(error) {
     hidePageBusy();
     switch (error.code) {
-        case LocationManager.PERMISSION_DENIED:
         case LocationManager.POSITION_UNAVAILABLE:
+            this.locationElement.html(LOCATION_SERVICE_INTERRUPTED);
+            break;
+        case LocationManager.PERMISSION_DENIED:
         case LocationManager.TIMEOUT:
             this.locationElement.html(LOCATION_ERROR_MESSAGE);
-            if(window.confirm(LOCATION_SOURCE_ENABLE)) {
-                window.plugins.webintent.startActivity({
-                    action: 'android.settings.LOCATION_SOURCE_SETTINGS'},
-                    function() { console.log('Start location source setting intent.')},
-                    function() { console.log('Failed to start location source setting intent.'); }
-                );
-            }
             break;
         case LocationManager.GEOCODING_REQUEST_FAILED:
             this.locationElement.html(GEOCODING_SERVICE_UNAVAILABLE);
@@ -256,7 +276,14 @@ RkEventRow.prototype.photoLoaded = function() {
             }
         }
         if(!foundLocationInPhoto) {
-            sharedLocationManager.getLocation(this);
+            if(window.confirm(LOCATION_USE_CURRENT)) {
+                sharedLocationManager.getLocation(this);
+            }else {
+                this.handleLocationError({
+                    code: LocationManager.POSITION_UNAVAILABLE,
+                    message: 'No position due to user decline'
+                });
+            }
         }
     }, this));
 };
@@ -719,18 +746,22 @@ function parseGeocodingResult(response) {
         shortAddress = province + locality;
         longAddress = shortAddress; 
         result = {
+            name: '',
             province: province,
             city: locality,
             shortaddress: shortAddress
         };
         if (sublocality!=null) {
             longAddress = longAddress + sublocality;
+            result.name += sublocality;
         }
         if (route!=null) {
             longAddress = longAddress + route;
+            result.name += route;
         }
         if(poi!=null) {
             longAddress += poi;
+            result.name += route;
         }
         result.longaddress = longAddress;
     }
@@ -771,6 +802,7 @@ function upload(events, done, fail) {
     }).done(function(response) {
         var form = response.getElementById('node-form');
         var ccOpt = form['creativecommons[select_license_form][cc_license_uri]'];
+        var provinceSet = Array.prototype.slice.call(form['field_location_img[0][province]'].querySelectorAll('option'));
         var formPoster = function(ev, i) {
             meter.width('0%');
             progress.html('('+i+'/'+events.length+')');
@@ -793,9 +825,6 @@ function upload(events, done, fail) {
                 'field_imagefield[0][fid]': '0',
                 'field_imagefield[0][list]': '1',
                 'body': ev.desc,
-                'field_location_img[0][name]': ev.address.longaddress,
-                //'field_location_img[0][city]': ev.address.city,
-                //'field_location_img[0][province]': ev.address.province,
                 'field_location_img[0][locpick][user_latitude]': ev.location.latitude.toFixed(6),
                 'field_location_img[0][locpick][user_longitude]': ev.location.longitude.toFixed(6),
                 'field_img_date[0][value][date]': /[\d-]*/.exec(new Date(ev.time-sDate.getTimezoneOffset()*60*1000).toISOString())[0],
@@ -805,11 +834,26 @@ function upload(events, done, fail) {
                 'name': rkAuth.db.name,
                 'status': '1',
                 'promote': '1',
-                'log': 'APP_'+APP_VERSION
+                'field_app_mobile_type[0][value]': APP_VERSION
             };
             if(ev.location.exifLat && ev.location.exifLng) {
-                ev['field_location_img[0][latitude]'] = ev.location.exifLat.toFixed(6);
-                ev['field_location_img[0][longitude]'] = ev.location.exifLng.toFixed(6);
+                options.params['field_location_img[0][latitude]'] = ev.location.exifLat.toFixed(6);
+                options.params['field_location_img[0][longitude]'] = ev.location.exifLng.toFixed(6);
+            }
+            if(sharedLocationManager.uploadCoords) {
+                console.log(sharedLocationManager.uploadCoords);
+                var coords = sharedLocationManager.uploadCoords;
+                options.params['field_app_longitude[0][value]'] = coords.longitude.toFixed(6);
+                options.params['field_app_latitude[0][value]'] = coords.latitude.toFixed(6);
+            }
+            var j = -1;
+            if(provinceSet.some(function(e){ j++; return e.innerHTML===ev.address.province; })) {
+                options.params['field_location_img[0][province]'] = provinceSet[j].value;
+                options.params['field_location_img[0][city]'] = ev.address.city;
+                options.params['field_location_img[0][name]'] = ev.address.name;
+            }else {
+                options.params['field_location_img[0][name]'] = ev.address.longaddress;
+                options.params['field_location_img[0][country]'] = 'xx';
             }
             var success = function (result) {
                 // This is a hack. Some alternative source should fit better e.g. Service3.
@@ -1022,13 +1066,27 @@ function btnUploadPressed(event, ui) {
             upload(events, done, fail);
         }else cancelUpload();
     };
+    var getUserUploadLocation = function() {
+        showPageBusy(PROCESSING);
+        navigator.geolocation.getCurrentPosition(
+            function(response) { 
+                sharedLocationManager.uploadCoords = response.coords;
+                startUpload();
+            },
+            function(err) {
+                console.log('Location error: '+err.code);
+                startUpload();
+            }, 
+            {enableHighAccuracy: false, maximumAge: 0, timeout: LOCATION_TEST_TIMEOUT}
+        );
+    };
 
     btnUpload.prop('disabled', true).addClass('ui-disabled');
     var publish = events.some(function(ev, i, arr) { return ev.fbPostId==0; });
     if(publish) {
-        verifyPost(startUpload, cancelUpload);
+        verifyPost(getUserUploadLocation, cancelUpload);
     }else {
-        startUpload();
+        getUserUploadLocation();
     }
 }
 
@@ -1121,6 +1179,7 @@ function init(event, ui) {
     console.log("init()");
     initModels();
     initUI();
+    sharedLocationManager.testGPS();
 }
 
 $(document).on("pagecreate", "#home", init);

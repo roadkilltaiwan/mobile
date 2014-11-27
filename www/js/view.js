@@ -68,7 +68,7 @@ $(document).on("pagebeforeshow", "#view", function() {
             csPtr.children('h3').html(evDate);
         }
         //create a li of this ev;
-        var key = ev.shortAddress+' '+ev.desc;
+        var key = ev.address.shortaddress+' '+ev.desc;
         var list = $('<li data-filtertext="'+evDate+' '+key+
                     '"><img class="vcenter" src="'+ev.photoURL+'"></img>'+
                     '<h4>['+ev.address.shortaddress+']</h4><p>'+ev.desc+' - 攝於'+

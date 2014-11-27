@@ -1,5 +1,5 @@
 "use strict";
-var host = 'http://roadkill.tw/phone';
+var host = 'http://roadkill.tw';
 var baseURL = host+"/drupalgap/";
 var rkAuth = {
     "db": localStorage,
