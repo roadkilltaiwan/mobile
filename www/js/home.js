@@ -1074,9 +1074,7 @@ function btnUploadPressed(event, ui) {
     };
     var startUpload = function() {
         hidePageBusy();
-        if(confirm("確定開始上傳？")) {
-            upload(events, done, fail);
-        }else cancelUpload();
+        upload(events, done, fail);
     };
     var getUserUploadLocation = function() {
         showPageBusy(PROCESSING);
