@@ -17,13 +17,13 @@ var rkSetting = {};
         };
         rkSetting.setFbPostId = function(param) {
             if(param) this.fbPostId = param;
-            this.fbPostIdSelect[0].selectedIndex = rkSetting.fbPostId;
-            if(this.init) this.fbPostIdSelect.selectmenu('refresh');
+            this.fbPostIdSelect[0].selectedIndex = this.fbPostId;
+            if(this.initialized) this.fbPostIdSelect.selectmenu('refresh');
             this.db['fbPostId'] = this.fbPostId;
         };
     });
     $(document).on("pagecreate", "#setting", function(event) {
-        rkSetting.init = true;
+        rkSetting.initialized = true;
         rkSetting.licenseSelect.on('change', function() {
             rkSetting.license = $(this).find("option:selected").val();
             rkSetting.db['license'] = rkSetting.license;

@@ -3,11 +3,7 @@ $(document).on("pagecreate", "#userInit", function(event) {
     var btnUtilLogin = $('#utilLogin');
     var onLogin = function(result) {
         console.log(result);
-        if(result && result.status === 'connected') {
-            rkSetting.setFbPostId('0');
-        }else {
-            rkSetting.setFbPostId('1');
-        }
+        rkSetting.setFbPostId((result && result.status==='connected')? '0': '1');
         $(document).on("pageshow", "#home", function(event) {
             $(document).off("pageshow", "#home");
             btnFbLogin.prop('disabled', false).removeClass('ui-disabled');
@@ -21,15 +17,20 @@ $(document).on("pagecreate", "#userInit", function(event) {
         });
         window.location.replace('#home');
     };
+    var onFail = function(err) {
+        alert(err);
+        btnFbLogin.prop('disabled', false).removeClass('ui-disabled');
+        btnUtilLogin.prop('disabled', false).removeClass('ui-disabled');
+    };
     var loginFB = function(e) {
         e.preventDefault();
         btnFbLogin.prop('disabled', true).addClass('ui-disabled');
         btnUtilLogin.prop('disabled', true).addClass('ui-disabled');
-        rkAuth.loginFB(onLogin, onLogin);
+        rkAuth.loginFB(onLogin, onFail);
     };
     btnFbLogin.click(loginFB);
     btnUtilLogin.click(function(e) {
-        rkSetting.setFbPostId('1');
+        e.preventDefault();
         onLogin();
     });
 });

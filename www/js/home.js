@@ -63,6 +63,7 @@ function LocationManager() {
 LocationManager.PERMISSION_DENIED = 1;
 LocationManager.POSITION_UNAVAILABLE = 2;
 LocationManager.TIMEOUT = 3;
+LocationManager.GEOCODING_PARSING_FAILED = 995;
 LocationManager.LOCATION_SERVICE_UNAVAILABLE = 996;
 LocationManager.GEOCODING_REQUEST_FAILED = 998;
 
@@ -101,7 +102,6 @@ LocationManager.prototype.getAddress = function(lat, lng, callback) {
 
 LocationManager.prototype.testGPS = function() {
     var that = this;
-    //that.hasAccessToGPS = false;
     navigator.geolocation.getCurrentPosition(
         function() {
             that.hasAccessToGPS = true;
@@ -109,13 +109,6 @@ LocationManager.prototype.testGPS = function() {
         },
         function() {
             that.hasAccessToGPS = false;
-            /*if(window.confirm(LOCATION_SOURCE_ENABLE)) {
-                window.plugins.webintent.startActivity({
-                    action: 'android.settings.LOCATION_SOURCE_SETTINGS'},
-                    function() { console.log('Start location source setting intent.')},
-                    function() { console.log('Failed to start location source setting intent.'); }
-                );
-            }*/
             console.log('GPS test failed');
         },
         {enableHighAccuracy: false, maximumAge: 0, timeout: LOCATION_TEST_TIMEOUT}
@@ -182,6 +175,7 @@ RkEventRow.prototype.locationRequestStarted = function() {
 
 RkEventRow.prototype.handleLocation = function(location) {
     this.event.location = location.coords;
+    rkreport.updateStorage();
     sharedLocationManager.getAddress(this.event.location.latitude, this.event.location.longitude, this);
 };
 
@@ -195,8 +189,9 @@ RkEventRow.prototype.handleLocationError = function(error) {
         case LocationManager.TIMEOUT:
             this.locationElement.html(LOCATION_ERROR_MESSAGE);
             break;
+        case LocationManager.GEOCODING_PARSING_FAILED:
         case LocationManager.GEOCODING_REQUEST_FAILED:
-            this.locationElement.html(GEOCODING_SERVICE_UNAVAILABLE);
+            this.locationElement.html(this.event.location.latitude.toFixed(2)+', '+this.event.location.longitude.toFixed(2));
     }
     var d = new Date(this.event.time);
     this.locationElement.html(this.locationElement.html()+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
@@ -576,8 +571,10 @@ MapView.prototype.show = function(options) {
             this.map.panTo(center);
             this.placeMarker(center);
         }
-    }
-    else {
+        if(!this.address) {
+            mapLocationManager.getAddress(this.location.latitude, this.location.longitude, this);
+        }
+    }else {
         this.locationLabel.html(GETTING_LOCATION_MESSAGE);
         mapLocationManager.getLocation(this);
     }
@@ -992,79 +989,82 @@ function btnUploadPressed(event, ui) {
 
     var verifyPost = function(success, cancel) {
         showPageBusy(FB_VERIFYING);
-        var forceUpdate = true;
         var graphCheckPermissions = function() {
             facebookConnectPlugin.getLoginStatus(
                 function(result) {
                     if(result.status === 'connected') { // check if the access token has publish_actions
                         facebookConnectPlugin.api(
                             "/me/permissions",
-                            ["publish_actions"],
+                            [],
                             function(result) {
                                 if(result.data.some(function(e) {
                                     return e.status==="granted" &&
                                         e.permission==="publish_actions";
                                     })) {
-                                    facebookConnectPlugin.getLoginStatus(
-                                        function(response) {
-                                            rkAuth.db['fbtoken'] = response.authResponse.accessToken;
+                                    facebookConnectPlugin.getAccessToken(
+                                        function(token) {
+                                            rkAuth.db['fbtoken'] = token;
                                             success();
                                         },
                                         onCheckPermissionFail
                                     );
                                 }else {
                                     console.log(result);
-                                    handlePermissionLackDialog();
+                                    facebookConnectPlugin.login(
+                                        ["publish_actions"],
+                                        function(response) {
+                                            facebookConnectPlugin.api(
+                                                "/me/permissions",
+                                                [],
+                                                function(result) {
+                                                    if(result.data.some(function(e) {
+                                                        return e.status==="granted" &&
+                                                            e.permission==="publish_actions";
+                                                        })) {
+                                                        facebookConnectPlugin.getAccessToken(
+                                                            function(token) {
+                                                                rkAuth.db['fbtoken'] = token;
+                                                                success();
+                                                            },
+                                                            onCheckPermissionFail
+                                                        );
+                                                    }else {
+                                                        console.log(result);
+                                                        if(confirm(FB_PERMISSION_ERROR)) {
+                                                            rkSetting.setFbPostId('1');
+                                                            success();
+                                                        }else cancel();
+                                                    }
+                                                },
+                                                onCheckPermissionFail
+                                            );
+                                        },
+                                        onCheckPermissionFail
+                                    );
                                 }
                             },
                             onCheckPermissionFail
                         );
                     }else { // app unauthenticated or user logout, login 
-                        facebookConnectPlugin.logout(reloginFB, reloginFB);
+                        console.log(result);
+                        rkAuth.loginFB(graphCheckPermissions, cancel);
                     }
                 },
-                function(err) {
-                    console.log(err);
-                    if(!err || (err.errorMessage.search('Session')<0&&err.errorCode!=='190')) {
-                        cancel(FB_STATUS_ERROR);
-                    }else {
-                        window.setTimeout(cancel, 5000);
-                        reloginFB();
-                    }
-                }
+                onCheckPermissionFail
             );
-            var reloginFB = function() {
-                facebookConnectPlugin.login(
-                    [],
-                    function(response) {
-                        verifyPost(success, cancel);
-                    },
-                    function(err) {
-                        console.log(err);
-                        if(!err || err.errorMessage.search('User cancelled')<0) {
-                            cancel(FB_STATUS_ERROR);
-                        }else {
-                            handlePermissionLackDialog();
-                        }
-                    }
-                );
-            };
-            var handlePermissionLackDialog = function() {
-                if(confirm(FB_PERMISSION_ERROR)) {
-                    rkSetting.setFbPostId('1');
-                    startUpload();
-                }else cancel();
-            };
             var onCheckPermissionFail = function(err) {
                 console.log(err);
-                if(err.errorCode === '190') {
+                if(err && err.errorCode === '190') {
                     //Error validating access token: The user has not authorized application
-                    facebookConnectPlugin.logout(reloginFB, reloginFB);
+                    rkAuth.loginFB(graphCheckPermissions, cancel);
+                }else if(err === 'Session: an attempt was made to request new permissions for a session that has a pending request.') {
+                    rkAuth.loginFB(graphCheckPermissions, cancel);
                 }else {
                     cancel(FB_STATUS_ERROR);
                 }
             };
         };
+        var forceUpdate = true;
         rkAuth.checkAuth(graphCheckPermissions, cancel, forceUpdate);
     };
     var cancelUpload = function(msg) {
