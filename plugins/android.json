@@ -87,7 +87,7 @@
                             "count": 1
                         },
                         {
-                            "xml": "<string name=\"fb_app_name\">com.mobile.Roadkill</string>",
+                            "xml": "<string name=\"fb_app_name\">tw.roadkill</string>",
                             "count": 1
                         }
                     ]
@@ -97,24 +97,24 @@
     },
     "installed_plugins": {
         "com.borismus.webintent": {
-            "PACKAGE_NAME": "com.mobile"
+            "PACKAGE_NAME": "tw.roadkill"
         },
         "org.apache.cordova.camera": {
-            "PACKAGE_NAME": "com.mobile"
+            "PACKAGE_NAME": "tw.roadkill"
         },
         "org.apache.cordova.file": {
-            "PACKAGE_NAME": "com.mobile"
+            "PACKAGE_NAME": "tw.roadkill"
         },
         "org.apache.cordova.file-transfer": {
-            "PACKAGE_NAME": "com.mobile"
+            "PACKAGE_NAME": "tw.roadkill"
         },
         "org.apache.cordova.geolocation": {
-            "PACKAGE_NAME": "com.mobile"
+            "PACKAGE_NAME": "tw.roadkill"
         },
         "com.phonegap.plugins.facebookconnect": {
             "APP_ID": "255369314650200",
-            "APP_NAME": "com.mobile.Roadkill",
-            "PACKAGE_NAME": "com.mobile"
+            "APP_NAME": "tw.roadkill",
+            "PACKAGE_NAME": "tw.roadkill"
         }
     },
     "dependent_plugins": {}

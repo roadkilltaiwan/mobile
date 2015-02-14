@@ -27,7 +27,8 @@ var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
 var REGAIN_SESSION = "驗證時效已過，請重新登入";
 var FB_VERIFYING = "準備中...";
-var FB_PERMISSION_ERROR = "請允許路殺社APP使用您的帳號發文，或至選項內改以公用帳號發佈或不要發佈。";
+var FB_STATUS_ERROR = '檢查臉書連線時發生錯誤';
+var FB_PERMISSION_ERROR = "您尚未完成帳戶授權，想以公用帳戶發布FB社團嗎？";
 var APP_VERSION = 'V0.4.2_ANDROID';
 
 /* ui elements */
@@ -100,7 +101,7 @@ LocationManager.prototype.getAddress = function(lat, lng, callback) {
 
 LocationManager.prototype.testGPS = function() {
     var that = this;
-    that.hasAccessToGPS = false;
+    //that.hasAccessToGPS = false;
     navigator.geolocation.getCurrentPosition(
         function() {
             that.hasAccessToGPS = true;
@@ -108,13 +109,13 @@ LocationManager.prototype.testGPS = function() {
         },
         function() {
             that.hasAccessToGPS = false;
-            if(window.confirm(LOCATION_SOURCE_ENABLE)) {
+            /*if(window.confirm(LOCATION_SOURCE_ENABLE)) {
                 window.plugins.webintent.startActivity({
                     action: 'android.settings.LOCATION_SOURCE_SETTINGS'},
                     function() { console.log('Start location source setting intent.')},
                     function() { console.log('Failed to start location source setting intent.'); }
                 );
-            }
+            }*/
             console.log('GPS test failed');
         },
         {enableHighAccuracy: false, maximumAge: 0, timeout: LOCATION_TEST_TIMEOUT}
@@ -169,7 +170,7 @@ RkEventRow.prototype.updateLocation = function() {
 RkEventRow.prototype.handleAddress = function(address) {
     this.event.address = address;
     var d = new Date(this.event.time);
-    this.locationElement.html(address.shortaddress+'('+d.getMonth()+'/'+d.getDate()+')');
+    this.locationElement.html(address.shortaddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
     rkreport.updateStorage();
     hidePageBusy();
 };
@@ -198,7 +199,7 @@ RkEventRow.prototype.handleLocationError = function(error) {
             this.locationElement.html(GEOCODING_SERVICE_UNAVAILABLE);
     }
     var d = new Date(this.event.time);
-    this.locationElement.html(this.locationElement.html()+'('+d.getMonth()+'/'+d.getDate()+')');
+    this.locationElement.html(this.locationElement.html()+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
     console.log(error.code+': '+error.message);
 };
 
@@ -294,7 +295,7 @@ RkEventRow.prototype.mapViewConfirmed = function(options) {
     this.event.address = options.location.address;
     this.event.time = options.time.getTime();
     var d = new Date(this.event.time);
-    this.locationElement.html(this.event.address.shortaddress+'('+d.getMonth()+'/'+d.getDate()+')');
+    this.locationElement.html(this.event.address.shortaddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
     rkreport.updateStorage();
 };
 
@@ -316,10 +317,21 @@ RkEventRow.prototype.btnEditPressed = function(event) {
 
 RkEventRow.prototype.takePicture = function() {
     imgPopup.find('a').off("click").on("click", $.proxy(function(e) {
+        var src = navigator.camera.PictureSourceType[e.target.id];
+        if(src === navigator.camera.PictureSourceType.CAMERA &&
+            !sharedLocationManager.hasAccessToGPS && window.confirm(LOCATION_SOURCE_ENABLE)) {
+            window.plugins.webintent.startActivity({
+                action: 'android.settings.LOCATION_SOURCE_SETTINGS'},
+                function() { console.log('Start location source setting intent.')},
+                function() { console.log('Failed to start location source setting intent.'); }
+            );
+            sharedLocationManager.hasAccessToGPS = true; // no bother as user chose a setting
+            return;
+        }
         imgPopup.popup("close");
         var option = {
             destinationType: navigator.camera.DestinationType.FILE_URI,
-            sourceType: navigator.camera.PictureSourceType[e.target.id],
+            sourceType: src,
             saveToPhotoAlbum: true,
             correctOrientation: true
         };
@@ -841,7 +853,6 @@ function upload(events, done, fail) {
                 options.params['field_location_img[0][longitude]'] = ev.location.exifLng.toFixed(6);
             }
             if(sharedLocationManager.uploadCoords) {
-                console.log(sharedLocationManager.uploadCoords);
                 var coords = sharedLocationManager.uploadCoords;
                 options.params['field_app_longitude[0][value]'] = coords.longitude.toFixed(6);
                 options.params['field_app_latitude[0][value]'] = coords.latitude.toFixed(6);
@@ -982,77 +993,79 @@ function btnUploadPressed(event, ui) {
     var verifyPost = function(success, cancel) {
         showPageBusy(FB_VERIFYING);
         var forceUpdate = true;
-        rkAuth.checkAuth(
-            function() {
-                facebookConnectPlugin.api(
-                    "/me/permissions",
-                    ["user_groups"],
-                    function(result) {
-                        if(result.data.some(function(e) {
-                            return e.status==="granted" &&
-                                e.permission==="user_groups";
-                        })) {
-                            facebookConnectPlugin.api(
-                                "/me/permissions",
-                                ["publish_actions"],
-                                function(result) {
-                                    if(result.data.some(function(e) {
-                                        return e.status==="granted" &&
-                                            e.permission==="publish_actions";
-                                        }) &&
-                                        result.data.some(function(e) {
-                                        return e.status==="granted" &&
-                                            e.permission==="user_groups";
+        var graphCheckPermissions = function() {
+            facebookConnectPlugin.getLoginStatus(
+                function(result) {
+                    if(result.status === 'connected') { // check if the access token has publish_actions
+                        facebookConnectPlugin.api(
+                            "/me/permissions",
+                            ["publish_actions"],
+                            function(result) {
+                                if(result.data.some(function(e) {
+                                    return e.status==="granted" &&
+                                        e.permission==="publish_actions";
                                     })) {
-                                        facebookConnectPlugin.getLoginStatus(
-                                            function(response) {
-                                                rkAuth.db['fbtoken'] = response.authResponse.accessToken;
-                                                success();
-                                            },
-                                            function(err) {
-                                                console.log(err);
-                                                cancel(UPLOAD_FAILED);
-                                            }
-                                        );
-                                    }else cancel(FB_PERMISSION_ERROR);
-                                },
-                                function(err) {
-                                    console.log(err);
-                                    cancel(UPLOAD_FAILED);
+                                    facebookConnectPlugin.getLoginStatus(
+                                        function(response) {
+                                            rkAuth.db['fbtoken'] = response.authResponse.accessToken;
+                                            success();
+                                        },
+                                        onCheckPermissionFail
+                                    );
+                                }else {
+                                    console.log(result);
+                                    handlePermissionLackDialog();
                                 }
-                            );
-                        }else cancel(FB_PERMISSION_ERROR);
+                            },
+                            onCheckPermissionFail
+                        );
+                    }else { // app unauthenticated or user logout, login 
+                        facebookConnectPlugin.logout(reloginFB, reloginFB);
+                    }
+                },
+                function(err) {
+                    console.log(err);
+                    if(!err || (err.errorMessage.search('Session')<0&&err.errorCode!=='190')) {
+                        cancel(FB_STATUS_ERROR);
+                    }else {
+                        window.setTimeout(cancel, 5000);
+                        reloginFB();
+                    }
+                }
+            );
+            var reloginFB = function() {
+                facebookConnectPlugin.login(
+                    [],
+                    function(response) {
+                        verifyPost(success, cancel);
                     },
                     function(err) {
                         console.log(err);
-                        if(!err || err.search('session that has been closed')<0) {
-                            cancel(UPLOAD_FAILED);
+                        if(!err || err.errorMessage.search('User cancelled')<0) {
+                            cancel(FB_STATUS_ERROR);
                         }else {
-                            // workaround for not raising error on user cancel
-                            window.setTimeout(cancel, 5000);
-                            facebookConnectPlugin.login(
-                                ["user_groups"],
-                                function(response) {
-                                    verifyPost(success, cancel);
-                                },
-                                function(err) {
-                                    console.log(err);
-                                    cancel(UPLOAD_FAILED);
-                                }
-                            );
+                            handlePermissionLackDialog();
                         }
                     }
                 );
-            },
-            function(err) {
-                if(err==='not login') {
-                    cancel(REGAIN_SESSION);
-                    window.location.replace('#logon');
-                }else cancel(UPLOAD_FAILED);
-                console.log('invalid session or connection');
-            },
-            forceUpdate
-        );
+            };
+            var handlePermissionLackDialog = function() {
+                if(confirm(FB_PERMISSION_ERROR)) {
+                    rkSetting.setFbPostId('1');
+                    startUpload();
+                }else cancel();
+            };
+            var onCheckPermissionFail = function(err) {
+                console.log(err);
+                if(err.errorCode === '190') {
+                    //Error validating access token: The user has not authorized application
+                    facebookConnectPlugin.logout(reloginFB, reloginFB);
+                }else {
+                    cancel(FB_STATUS_ERROR);
+                }
+            };
+        };
+        rkAuth.checkAuth(graphCheckPermissions, cancel, forceUpdate);
     };
     var cancelUpload = function(msg) {
         hidePageBusy();
@@ -1062,7 +1075,6 @@ function btnUploadPressed(event, ui) {
     var startUpload = function() {
         hidePageBusy();
         if(confirm("確定開始上傳？")) {
-            btnUpload.prop('disabled', true).addClass('ui-disabled');
             upload(events, done, fail);
         }else cancelUpload();
     };
@@ -1125,7 +1137,7 @@ function initUI() {
         var newRow = new RkEventRow(row, element, rkevent);
         if(rkevent.address) {
             var d = new Date(rkevent.time);
-            newRow.locationElement.html(rkevent.address.shortaddress+'('+d.getMonth()+'/'+d.getDate()+')');
+            newRow.locationElement.html(rkevent.address.shortaddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
         }
         if(rkevent.photoURL) {
             newRow.displayPhoto(rkevent.photoURL);
@@ -1180,6 +1192,7 @@ function init(event, ui) {
     initModels();
     initUI();
     sharedLocationManager.testGPS();
+    window.setInterval(function(){sharedLocationManager.testGPS();}, 60000);
 }
 
 $(document).on("pagecreate", "#home", init);

@@ -90,7 +90,7 @@ var rkAuth = {
     },
     "loginFB": function(done, fail) {
         facebookConnectPlugin.login(
-            ['user_groups'],
+            [],//['user_groups'],
             function(response) {
                 console.log('Facebook login succeeded\n');
                 if(done) done(response);

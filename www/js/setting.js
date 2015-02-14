@@ -1,32 +1,40 @@
 var rkSetting = {};
 (function() {
     // model
-    var db = localStorage;
     $(document).ready(function() {
-        rkSetting = {
-            license: db.license||$('#select-cc').find('option:selected').val(),
-            fbPostId: db.fbPostId||$('#select-fbPostId').find('option:selected').val()
+        rkSetting.db = localStorage;
+        rkSetting.licenseSelect = $('#select-cc');
+        rkSetting.fbPostIdSelect = $('#select-fbPostId');
+        rkSetting.license = rkSetting.db.license||$('#select-cc').find('option:selected').val();
+        rkSetting.fbPostId = rkSetting.db.fbPostId||$('#select-fbPostId').find('option:selected').val();
+        rkSetting.setLicense = function(param) {
+            if(param) this.license = param;
+            this.licenseSelect.find('option').filter(function() {
+                return $(this).val()===rkSetting.license;
+            }).prop('selected', true);
+            if(this.init) this.licenseSelect.selectmenu('refresh');
+            this.db['license'] = this.license;
+        };
+        rkSetting.setFbPostId = function(param) {
+            if(param) this.fbPostId = param;
+            this.fbPostIdSelect[0].selectedIndex = rkSetting.fbPostId;
+            if(this.init) this.fbPostIdSelect.selectmenu('refresh');
+            this.db['fbPostId'] = this.fbPostId;
         };
     });
     $(document).on("pagecreate", "#setting", function(event) {
-        var licenseSelect = $('#select-cc');
-        var fbPostIdSelect = $('#select-fbPostId');
-        licenseSelect.on('change', function() {
+        rkSetting.init = true;
+        rkSetting.licenseSelect.on('change', function() {
             rkSetting.license = $(this).find("option:selected").val();
-            db['license'] = rkSetting.license;
+            rkSetting.db['license'] = rkSetting.license;
         });
-        fbPostIdSelect.on('change', function() {
+        rkSetting.fbPostIdSelect.on('change', function() {
             rkSetting.fbPostId = $(this).find("option:selected").val();
-            db['fbPostId'] = rkSetting.fbPostId;
+            rkSetting.db['fbPostId'] = rkSetting.fbPostId;
         });
         // view
-        licenseSelect.find('option').filter(function() {
-            return $(this).val()===rkSetting.license;
-        }).prop('selected', true);
-        licenseSelect.selectmenu('refresh');
-
-        fbPostIdSelect[0].selectedIndex = rkSetting.fbPostId;
-        fbPostIdSelect.selectmenu('refresh');
+        rkSetting.setLicense();
+        rkSetting.setFbPostId();
         // control
         var onLogout = function(result) {
             $.mobile.loading('hide');
@@ -60,3 +68,4 @@ var rkSetting = {};
         $('#logout').click(logoutDrupal);
     });
 })();
+
