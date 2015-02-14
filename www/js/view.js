@@ -74,7 +74,8 @@ $(document).on("pagebeforeshow", "#view", function() {
                     '<h4>['+ev.address.shortaddress+']</h4><p>'+ev.desc+' - 攝於'+
                     new Date(ev.time).toLocaleDateString()+'</p></li>');
         // The following external browser code is for Android
-        list.click(function() { navigator.app.loadUrl(ev.location, { openExternal:true }); });
+        //list.click(function() { navigator.app.loadUrl(ev.location, { openExternal:true }); });
+        list.click(function() { window.open(ev.location, '_blank', 'location=yes'); });
         //append to the bottom of the ul in container;
         csPtr.children('[data-role="listview"]').append(list);
         csPtr.attr('data-filtertext', csPtr.attr('data-filtertext')+' '+key);
