@@ -64,10 +64,6 @@ var rkAuth = {
             success: $.proxy(function(result) {
                 this.setSession(result);
                 done();
-                this.loginFB(/*done, function(err) {
-                    if(err) alert(err);
-                    done();
-                }*/);
             }, this),
             error: fail 
         });

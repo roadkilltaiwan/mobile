@@ -1,18 +1,9 @@
 $(document).on("pagecreate", "#logon", function(event) {
     var btnLogin = $('#login');
     var onLogin = function(result) {
-        $(document).on("pageshow", "#home", function(event) {
-            $(document).off("pageshow", "#home");
-            btnLogin.prop('disabled', false).removeClass('ui-disabled');
-            var options = {
-                y: "50"
-            };
-            window.setTimeout(function() {
-                $('#eduPopup').popup("open", options);
-            }, 1000);
-        });
         $.mobile.loading('hide');
-        window.location.replace('#home');
+        window.location.replace('#userInit');
+        btnLogin.prop('disabled', false).removeClass('ui-disabled');
     };
     function loginDrupal(e) {
         e.preventDefault();
@@ -44,6 +35,12 @@ $(document).on("pagecreate", "#logon", function(event) {
         btnLogin.prop('disabled', false).removeClass('ui-disabled');
     };
     btnLogin.click(loginDrupal);
+    $('#password').keydown(function(event) {
+        if(event.which == 13) {
+            event.preventDefault();
+            btnLogin.click();
+        }
+    });
     $('#logon div h1 a').click(function(e) {
         e.preventDefault();
         e.target.blur();
