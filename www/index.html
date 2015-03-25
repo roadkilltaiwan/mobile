@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="./css/jquery.mobile-1.4.3.css">
 <link rel="stylesheet" media="screen" href="./css/splash.css">
+<link rel="stylesheet" media="screen" href="./css/logon.css">
+<link rel="stylesheet" media="screen" href="./css/userInit.css">
 <link rel="stylesheet" media="screen" href="./css/home.css">
 <link rel="stylesheet" media="all" href="./css/application.css">
 <link rel="stylesheet" media="screen" href="./css/view.css">
@@ -219,7 +221,7 @@
         <h1>Roadkill Report!</h1>
     </div>
     <div data-role="main" class="ui-content" data-theme="a">
-        <img src="./img/logo.png" style="display: block; max-width: 70%; margin: auto;" />
+        <img src="./img/logo.png" class="rkLogo"/>
         <div class="ui-field-contain">
             <form method="post">
                 <input type="text" id="username" placeholder="TaiRON帳號"/>
@@ -243,11 +245,11 @@
         <h1>Roadkill Report!</h1>
     </div>
     <div data-role="main" class="ui-content" data-theme="b">
-        <img src="./img/logo.png" style="display: block; max-width: 70%; margin: auto;" />
+        <img src="./img/logo.png" class="rkLogo" style="display: block; max-width: 70%; margin: auto;" />
         <div class="ui-field-contain">
-            <p>接下來您可以自動整合裝置上的資訊，將紀錄上傳到TaiRON台灣野生動物路死觀察網。如果您已是「四處爬爬走」Facebook社團成員，還可以您的帳號同步分享到路殺社臉書上。</p>
+            <p>此應用程式會同步將路殺紀錄上傳到Facebook社團「路殺社」，請先按以下按鈕登入您的Facebook帳號。</p>
             <form method="post">
-                <a href="#" id="fbLogin" data-role="button" data-icon="carat-r" data-iconpos="right">登入Facebook</a>
+                <a href="#" id="fbLogin" data-role="button" data-icon="carat-r" data-iconpos="right"><img src="./img/FB-f-Logo__blue_100.png" class="fbLogo" /> Log in with Facebook</a>
             </form>
             <p>若您尚未加入臉書社團，您也可以選擇透過公用帳號代發至社團，或是稍候在選項中設定不公開至臉書。</p>
             <form method="post">
