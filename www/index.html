@@ -166,8 +166,8 @@
         <li>
             <label for="select-fbPostId" class="select">在路殺社臉書社團…</label>
             <select name="select-fbPostId" id="select-fbPostId">
-                <option value="0" selected>以個人帳號發佈</option>
-                <option value="1">以公用帳號發佈</option>
+                <option value="0" disabled>以個人帳號發佈</option>
+                <option value="1" selected>以公用帳號發佈</option>
                 <option value="2">不要發佈</option>
             </select>
             <p>在回報時您可以選擇同步發佈到臉書社團，並且以何種身份發表。</p>
@@ -226,8 +226,9 @@
             <form method="post">
                 <input type="text" id="username" placeholder="TaiRON帳號"/>
                 <input type="password" id="password" placeholder="TaiRON密碼"/>
-                <p>登入前您應閱讀<a href="#contract">隱私權政策</a>：</p>
-                <a href="#" id="login" data-role="button" data-icon="carat-r" data-iconpos="right">同意並繼續</a>
+                <p>登入前您應閱讀<a href="#contract">隱私權政策</a>。</p>
+				<a href="#" id="login" data-role="button" data-icon="carat-r" data-iconpos="right">登入</a>
+				<p><i>需要<a href="#" id="register">註冊帳號</a>或是<a href="#" id="forget">重設密碼</a>？</i></p>
             </form>
         </div>
     </div>

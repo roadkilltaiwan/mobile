@@ -1,8 +1,10 @@
 $(document).on("pagecreate", "#logon", function(event) {
     var btnLogin = $('#login');
+	var lnkRegister = $('#register');
+	var lnkForget = $('#forget');
     var onLogin = function(result) {
         $.mobile.loading('hide');
-        window.location.replace('#userInit');
+        window.location.replace('#home');
         btnLogin.prop('disabled', false).removeClass('ui-disabled');
     };
     function loginDrupal(e) {
@@ -35,6 +37,12 @@ $(document).on("pagecreate", "#logon", function(event) {
         btnLogin.prop('disabled', false).removeClass('ui-disabled');
     };
     btnLogin.click(loginDrupal);
+	lnkRegister.click(function() {
+		window.open('http://roadkill.tw/user/register', '_blank', 'location=yes');
+	});
+	lnkForget.click(function() {
+		window.open('http://roadkill.tw/user/password', '_blank', 'location=yes');
+	});
     $('#password').keydown(function(event) {
         if(event.which == 13) {
             event.preventDefault();

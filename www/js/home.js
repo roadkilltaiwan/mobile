@@ -976,7 +976,7 @@ function btnUploadPressed(event, ui) {
     var done = function(resp) {
         clearReport(rkreport);
         uploadPopup.popup("close");
-        alert(UPLOAD_DONE);
+        //alert(UPLOAD_DONE);
     };
     var fail = function(code) {
         uploadPopup.popup("close");
