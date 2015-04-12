@@ -29,7 +29,7 @@ var REGAIN_SESSION = "驗證時效已過，請重新登入";
 var FB_VERIFYING = "準備中...";
 var FB_STATUS_ERROR = '檢查臉書連線時發生錯誤';
 var FB_PERMISSION_ERROR = "您尚未完成帳戶授權，想以公用帳戶發布FB社團嗎？";
-var APP_VERSION = 'V0.4.4_ANDROID';
+var APP_VERSION = 'V0.4.6_ANDROID';
 
 /* ui elements */
 var btnUpload;

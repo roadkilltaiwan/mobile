@@ -5,14 +5,18 @@ var rkSetting = {};
         rkSetting.db = localStorage;
         rkSetting.licenseSelect = $('#select-cc');
         rkSetting.fbPostIdSelect = $('#select-fbPostId');
-        rkSetting.license = rkSetting.db.license||$('#select-cc').find('option:selected').val();
+		rkSetting.license = rkSetting.db.license||$('#select-cc').find('option:selected').val();
         rkSetting.fbPostId = rkSetting.db.fbPostId||$('#select-fbPostId').find('option:selected').val();
-        rkSetting.setLicense = function(param) {
+        var fbPostIdDefault = 1;
+		if(rkSetting.fbPostId<fbPostIdDefault) {
+			rkSetting.fbPostId = fbPostIdDefault;
+		}
+		rkSetting.setLicense = function(param) {
             if(param) this.license = param;
             this.licenseSelect.find('option').filter(function() {
                 return $(this).val()===rkSetting.license;
             }).prop('selected', true);
-            if(this.init) this.licenseSelect.selectmenu('refresh');
+            if(this.initialized) this.licenseSelect.selectmenu('refresh');
             this.db['license'] = this.license;
         };
         rkSetting.setFbPostId = function(param) {
