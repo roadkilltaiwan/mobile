@@ -25,6 +25,7 @@ var PICK_DATE = "請選拍攝日期";
 var PROCESSING = "處理中...";
 var PARSE_GEOCODING_RESULT_FAILED = "無法解析地址資訊";
 var GEOCODING_SERVICE_ERROR = "地址查詢產生錯誤";
+var EMPTY_ADDRESS = "N/A";
 var REGAIN_SESSION = "驗證時效已過，請重新登入";
 var FB_VERIFYING = "準備中...";
 var FB_STATUS_ERROR = '檢查臉書連線時發生錯誤';
@@ -65,6 +66,7 @@ LocationManager.POSITION_UNAVAILABLE = 2;
 LocationManager.TIMEOUT = 3;
 LocationManager.GEOCODING_PARSING_FAILED = 995;
 LocationManager.LOCATION_SERVICE_UNAVAILABLE = 996;
+LocationManager.GEOCODING_SERVICE_ERROR = 997;
 LocationManager.GEOCODING_REQUEST_FAILED = 998;
 
 LocationManager.prototype.getAddress = function(lat, lng, callback) {
@@ -86,7 +88,7 @@ LocationManager.prototype.getAddress = function(lat, lng, callback) {
             }
         }
         else {
-            $.proxy(callback.handleLocationError, callback)({code: 994, message: GEOCODING_SERVICE_ERROR});
+            $.proxy(callback.handleLocationError, callback)({code: 997, message: GEOCODING_SERVICE_ERROR});
         }
     };
     
@@ -163,7 +165,7 @@ RkEventRow.prototype.updateLocation = function() {
 RkEventRow.prototype.handleAddress = function(address) {
     this.event.address = address;
     var d = new Date(this.event.time);
-    this.locationElement.html(address.shortaddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
+    this.locationElement.html(address.shortAddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
     rkreport.updateStorage();
     hidePageBusy();
 };
@@ -190,8 +192,14 @@ RkEventRow.prototype.handleLocationError = function(error) {
             this.locationElement.html(LOCATION_ERROR_MESSAGE);
             break;
         case LocationManager.GEOCODING_PARSING_FAILED:
+		case LocationManager.GEOCODING_SERVICE_ERROR:
         case LocationManager.GEOCODING_REQUEST_FAILED:
-            this.locationElement.html(this.event.location.latitude.toFixed(2)+', '+this.event.location.longitude.toFixed(2));
+			//this.locationElement.html(this.event.location.latitude.toFixed(6)+', '+this.event.location.longitude.toFixed(6));
+			this.handleAddress({
+				shortAddress: EMPTY_ADDRESS,
+				longAddress: EMPTY_ADDRESS
+			});
+			return;
     }
     var d = new Date(this.event.time);
     this.locationElement.html(this.locationElement.html()+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
@@ -290,7 +298,7 @@ RkEventRow.prototype.mapViewConfirmed = function(options) {
     this.event.address = options.location.address;
     this.event.time = options.time.getTime();
     var d = new Date(this.event.time);
-    this.locationElement.html(this.event.address.shortaddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
+    this.locationElement.html(this.event.address.shortAddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
     rkreport.updateStorage();
 };
 
@@ -499,7 +507,7 @@ MapView.prototype.init = function(mapCanvas) {
     }
     
     if(this.address!=null) {
-        this.locationLabel.html(this.address.longaddress);
+        this.locationLabel.html(this.address.longAddress);
     }
     
     if(this.time!=null) {
@@ -556,7 +564,10 @@ MapView.prototype.getSelectedLocation = function() {
         longitude: latlng.lng(),
         altitude: null
     };
-    return {coords: coords, address: this.address};
+    return {
+		coords: coords,
+		address: this.address? this.address: {shortAddress: EMPTY_ADDRESS, longAddress: EMPTY_ADDRESS}
+    };
 };
 
 MapView.prototype.show = function(options) {
@@ -564,7 +575,6 @@ MapView.prototype.show = function(options) {
         this.location = options.location;
         this.address = options.address;
         this.time = options.time;
-        this.locationLabel.html(this.address.longaddress);
         this.dateLabel.html(this.time.toLocaleDateString());
         if(this.map!=null) {
             var center = new google.maps.LatLng(this.location.latitude, this.location.longitude);
@@ -573,6 +583,8 @@ MapView.prototype.show = function(options) {
         }
         if(!this.address) {
             mapLocationManager.getAddress(this.location.latitude, this.location.longitude, this);
+        }else {
+			this.locationLabel.html(this.address.longAddress);
         }
     }else {
         this.locationLabel.html(GETTING_LOCATION_MESSAGE);
@@ -632,12 +644,27 @@ MapView.prototype.handleLocation = function(location) {
 };
 
 MapView.prototype.handleAddress = function(address) {
-    this.locationLabel.html(address.longaddress);
+    this.locationLabel.html(address.longAddress);
     this.address = address;
 };
 
-MapView.prototype.handleLocationError = function(location) {
-    this.locationLabel.html(LOCATION_ERROR_MESSAGE);
+MapView.prototype.handleLocationError = function(error) {
+	switch (error.code) {
+        case LocationManager.GEOCODING_PARSING_FAILED:
+		case LocationManager.GEOCODING_SERVICE_ERROR:
+        case LocationManager.GEOCODING_REQUEST_FAILED:
+			this.handleAddress({
+				shortAddress: EMPTY_ADDRESS,
+				longAddress: EMPTY_ADDRESS
+			});
+			break;
+		case LocationManager.POSITION_UNAVAILABLE:
+        case LocationManager.PERMISSION_DENIED:
+        case LocationManager.TIMEOUT:
+		default:
+            this.locationLabel.html(LOCATION_ERROR_MESSAGE);
+    }
+    console.log(error.code+': '+error.message);
 };
 
 MapView.prototype.datePickerChanged = function(event, passed) {
@@ -758,7 +785,7 @@ function parseGeocodingResult(response) {
             name: '',
             province: province,
             city: locality,
-            shortaddress: shortAddress
+            shortAddress: shortAddress
         };
         if (sublocality!=null) {
             longAddress = longAddress + sublocality;
@@ -772,7 +799,7 @@ function parseGeocodingResult(response) {
             longAddress += poi;
             result.name += route;
         }
-        result.longaddress = longAddress;
+        result.longAddress = longAddress;
     }
     return result;
 }
@@ -824,11 +851,14 @@ function upload(events, done, fail) {
             options.mimeType = 'image/' + ((suffix=='jpg'||suffix=='JPG')? 'jpeg': suffix);
             options.httpMethod = "POST";
             var sDate = new Date(ev.time);
+			if(ev.address==null) {
+				ev.address = {shortAddress: EMPTY_ADDRESS, longAddress: EMPTY_ADDRESS};
+			}
             options.params = {
                 'form_build_id': form['form_build_id'].value,
                 'form_token': form['form_token'].value,
                 'form_id': form['form_id'].value,
-                'title': '['+ev.address.shortaddress+'] '+sDate,
+                'title': '['+ev.address.shortAddress+'] '+sDate,
                 'field_app_post_type[value]': ev.fbPostId,
                 'field_data_res[value]': '323',
                 'field_imagefield[0][fid]': '0',
@@ -860,7 +890,7 @@ function upload(events, done, fail) {
                 options.params['field_location_img[0][city]'] = ev.address.city;
                 options.params['field_location_img[0][name]'] = ev.address.name;
             }else {
-                options.params['field_location_img[0][name]'] = ev.address.longaddress;
+                options.params['field_location_img[0][name]'] = ev.address.longAddress;
                 options.params['field_location_img[0][country]'] = 'xx';
             }
             var success = function (result) {
@@ -900,7 +930,12 @@ function upload(events, done, fail) {
                 error({ code: FileTransferError.ABORT_ERR, exception: 'early abort' });
             }
         };
-        formPoster(events[0], 1);
+		try {
+			formPoster(events[0], 1);
+		} catch(error) {
+			fail('Exception!!');
+			console.log(error);
+		}
     }).fail(function(jqXHR, textStatus, errorThrown) {
         state.html(UPLOAD_ABORT);
         console.log('Form retrieval '+jqXHR.status+': '+errorThrown);
@@ -1135,7 +1170,7 @@ function initUI() {
         var newRow = new RkEventRow(row, element, rkevent);
         if(rkevent.address) {
             var d = new Date(rkevent.time);
-            newRow.locationElement.html(rkevent.address.shortaddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
+            newRow.locationElement.html(rkevent.address.shortAddress+'('+(d.getMonth()+1)+'/'+d.getDate()+')');
         }
         if(rkevent.photoURL) {
             newRow.displayPhoto(rkevent.photoURL);

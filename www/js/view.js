@@ -68,10 +68,10 @@ $(document).on("pagebeforeshow", "#view", function() {
             csPtr.children('h3').html(evDate);
         }
         //create a li of this ev;
-        var key = ev.address.shortaddress+' '+ev.desc;
+        var key = ev.address.shortAddress+' '+ev.desc;
         var list = $('<li data-filtertext="'+evDate+' '+key+
                     '"><img class="vcenter" src="'+ev.photoURL+'"></img>'+
-                    '<h4>['+ev.address.shortaddress+']</h4><p>'+ev.desc+' - 攝於'+
+                    '<h4>['+ev.address.shortAddress+']</h4><p>'+ev.desc+' - 攝於'+
                     new Date(ev.time).toLocaleDateString()+'</p></li>');
         // The following external browser code is for Android
         //list.click(function() { navigator.app.loadUrl(ev.location, { openExternal:true }); });
