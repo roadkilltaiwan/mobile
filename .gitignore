@@ -15,9 +15,6 @@ Android/bin/
 Android/gen/
 Android/assets/
 
-# generated files - android project subfolder
-platforms/*
-
 # generated files
 bin/
 gen/
@@ -51,3 +48,10 @@ IOS/www/
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+
+# generated files - cordova project subfolder
+platforms/
+
+# generated files - cordova plugins
+plugins/
+
