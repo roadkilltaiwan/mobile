@@ -1,6 +1,6 @@
-#Roadkill Report, a mobile Phonegap app
+# Roadkill Report, a mobile Phonegap app
 
-##Setup
+## Setup
 
 Install SDKs of each targeting mobile platform.
 Also follow [this guide](https://cordova.apache.org/docs/en/edge/guide_cli_index.md.html) to setup Cordova CLI.
@@ -14,23 +14,21 @@ cordova prepare
 ```
 
 Now for each targeting platform
----------------
-Android:
+* Android:
 
-cordova run / open Android project (platform/android) in Eclipse and run
+    cordova run / open Android project (platform/android) in Eclipse and run
 
-iOS:
+* iOS:
 
-open iOS project in Xcode (platforms/iOS)
+    open iOS project in Xcode (platforms/iOS)
 
-run on device
+    run on device
 
-Chrome:
+* Chrome:
 
-lanuch apache
+    lanuch apache
 
-run on google chrome plugin ripple
+    run on google chrome plugin ripple
 
---------------
 
 
