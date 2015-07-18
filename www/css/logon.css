@@ -4,3 +4,16 @@ img.rkLogo {
   margin: auto;
 }
 
+a#fbSignin {
+  color: white;
+  text-shadow: rgba(0, 0, 0, .5) -1px -1px 0;
+  border-color: #2d5073;
+  background-color: #3b5998;
+}
+
+a#toggleLogin {
+  color: white;
+  text-shadow: rgba(0, 0, 0, .5) -1px -1px 0;
+  border-color: #007aa6;
+  background-color: #008cbf;
+}

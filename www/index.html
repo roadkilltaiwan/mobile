@@ -5,9 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="./css/jquery.mobile-1.4.3.css">
+<link rel="stylesheet" href="./css/icon-pack-custom.css">
 <link rel="stylesheet" media="screen" href="./css/splash.css">
 <link rel="stylesheet" media="screen" href="./css/logon.css">
-<link rel="stylesheet" media="screen" href="./css/userInit.css">
 <link rel="stylesheet" media="screen" href="./css/home.css">
 <link rel="stylesheet" media="all" href="./css/application.css">
 <link rel="stylesheet" media="screen" href="./css/view.css">
@@ -27,7 +27,6 @@
 <script src="./js/view.js"></script>
 <script src="./js/logon.js"></script>
 <script src="./js/setting.js"></script>
-<script src="./js/userInit.js"></script>
 <script src="./js/home.js"></script>
 <script src="./js/application.js"></script>
 </head>
@@ -223,13 +222,9 @@
     <div data-role="main" class="ui-content" data-theme="a">
         <img src="./img/logo.png" class="rkLogo"/>
         <div class="ui-field-contain">
-            <form method="post">
-                <input type="text" id="username" placeholder="TaiRON帳號"/>
-                <input type="password" id="password" placeholder="TaiRON密碼"/>
-                <p>登入前您應閱讀<a href="#contract">隱私權政策</a>。</p>
-				<a href="#" id="login" data-role="button" data-icon="carat-r" data-iconpos="right">登入</a>
-				<p><i>需要<a href="#" id="register">註冊帳號</a>或是<a href="#" id="forget">重設密碼</a>？</i></p>
-            </form>
+            <p>登入前您應閱讀<a href="#contract">隱私權政策</a>。</p>
+            <a href="#" id="fbSignin" data-role="button" data-icon="facebook-square" data-iconpos="right" class="ui-nodisc-icon">透過Facebook登入</a>
+            <a href="#" id="toggleLogin" data-role="button" data-icon="user" data-iconpos="right" class="ui-nodisc-icon">官網登入</a>
         </div>
     </div>
     <div data-role="footer" class="ui-footer" data-position="fixed" data-theme="b">
@@ -241,21 +236,17 @@
 </div>
 <!--logon-->
 
-<div id="userInit" class="page" data-role="page">
+<div id="logonDrupal" class="page" data-role="page">
     <div data-role="header" class="ui-header" data-id="header" data-position="fixed" data-theme="b">
         <h1>Roadkill Report!</h1>
     </div>
     <div data-role="main" class="ui-content" data-theme="b">
         <img src="./img/logo.png" class="rkLogo" style="display: block; max-width: 70%; margin: auto;" />
         <div class="ui-field-contain">
-            <p>此應用程式會同步將路殺紀錄上傳到Facebook社團「路殺社」，請先按以下按鈕登入您的Facebook帳號。</p>
-            <form method="post">
-                <a href="#" id="fbLogin" data-role="button" data-icon="carat-r" data-iconpos="right"><img src="./img/FB-f-Logo__blue_100.png" class="fbLogo" /> Log in with Facebook</a>
-            </form>
-            <p>若您尚未加入臉書社團，您也可以選擇透過公用帳號代發至社團，或是稍候在選項中設定不公開至臉書。</p>
-            <form method="post">
-                <a href="#" id="utilLogin" data-role="button" data-icon="carat-r" data-iconpos="right">使用公用帳號</a>
-            </form>
+            <input type="text" id="username" placeholder="TaiRON帳號"/>
+            <input type="password" id="password" placeholder="TaiRON密碼"/>
+            <a href="#" id="login" data-role="button" data-icon="carat-r" data-iconpos="right">登入</a>
+            <p><i>需要<a href="#" id="register">註冊帳號</a>或是<a href="#" id="forget">重設密碼</a>？</i></p>
         </div>
     </div>
     <div data-role="footer" class="ui-footer" data-position="fixed" data-theme="b">

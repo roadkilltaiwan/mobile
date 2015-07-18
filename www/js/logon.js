@@ -1,6 +1,46 @@
 $(document).on("pagecreate", "#logon", function(event) {
+    var btnFBSiginin = $('#fbSignin');
+    var toggleLogin = $('#toggleLogin');
+    var onFail = function(err, status) {
+        $('#logon').find('a').prop('disabled', false).removeClass('ui-disabled');
+        console.log('Error Status: ' + status)
+        console.log(err);
+    };
+    var onLogin = function(response) {
+        window.location.replace('#home');
+        $('#logon').find('a').prop('disabled', false).removeClass('ui-disabled');
+    };
+	var fbLoginSuccess = function (userData) {
+        rkAuth.checkAuth(
+            onLogin,
+            function() {
+                rkAuth.loginDrupalFBOAuth(
+                    onLogin,
+                    function(err) {
+                        onFail(err, 'FBOAuth failed');
+                    }
+                );
+            },
+            true
+        );
+    };
+    var signinFacebook = function(e) {
+        // lock ui
+        $('#logon').find('a').prop('disabled', true).addClass('ui-disabled');
+        rkAuth.loginFB(
+            fbLoginSuccess,
+            function (error) { onFail(error, 'Failed to get FB access token'); }
+        );
+    };
+    btnFBSiginin.click(signinFacebook);
+    toggleLogin.click(function(e) {
+        $.mobile.changePage("#logonDrupal", {transition: 'none'});
+        $('#logonDrupal input#username').focus();
+    });
+});
+$(document).on("pagecreate", "#logonDrupal", function(event) {
     var btnLogin = $('#login');
-	var lnkRegister = $('#register');
+    var lnkRegister = $('#register');
 	var lnkForget = $('#forget');
     var onLogin = function(result) {
         $.mobile.loading('hide');
@@ -20,7 +60,13 @@ $(document).on("pagecreate", "#logon", function(event) {
                 theme: "c"
             });
             btnLogin.prop('disabled', true).addClass('ui-disabled');
-            rkAuth.loginDrupal(id, pass, onLogin, onFail);
+            rkAuth.checkAuth(
+                onLogin,
+                function() {
+                    rkAuth.loginDrupal(id, pass, onLogin, onFail);
+                },
+                true
+            );
         }
     }
     var onFail = function(jqXHR, textStatus, errorThrown) {
@@ -38,10 +84,10 @@ $(document).on("pagecreate", "#logon", function(event) {
     };
     btnLogin.click(loginDrupal);
 	lnkRegister.click(function() {
-		window.open('http://roadkill.tw/user/register', '_blank', 'location=yes');
+		window.open(host+'/user/register', '_blank', 'location=yes');
 	});
 	lnkForget.click(function() {
-		window.open('http://roadkill.tw/user/password', '_blank', 'location=yes');
+		window.open(host+'/user/password', '_blank', 'location=yes');
 	});
     $('#password').keydown(function(event) {
         if(event.which == 13) {

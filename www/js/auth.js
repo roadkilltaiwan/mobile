@@ -1,5 +1,5 @@
 "use strict";
-var host = 'http://roadkill.tw';
+var host = 'http://go.roadkill.tw';
 var baseURL = host+"/drupalgap/";
 var rkAuth = {
     "db": localStorage,
@@ -8,6 +8,7 @@ var rkAuth = {
         xhr.open('POST', baseURL+'system/connect');
         xhr.withCredentials = true;
         xhr.timeout = 10000;
+        xhr.setRequestHeader('X-CSRF-Token', this.db.CSRF_token);
         xhr.onreadystatechange = function() {
             if(this.readyState===4) {
                 try {
@@ -84,12 +85,56 @@ var rkAuth = {
             error: fail
         });
     },
+    "loginDrupalFBOAuth": function(done, fail) {
+        $.ajax(baseURL+'fboauth/connect.json', {
+            'method': 'POST',
+            'data': { 'access_token': this.db.fbtoken },
+            'success': function(response) {
+                console.log('FBOAuth Success!!');
+                rkAuth.setSession(response);
+                done();
+            },
+            'error': function(err) {
+                console.log('FBOAuth failed');
+                fail(err);
+            }
+        });
+    },
     "loginFB": function(done, fail) {
+        var that = this;
         facebookConnectPlugin.login(
-            [],//['user_groups'],
+            ['email'],
             function(response) {
-                console.log('Facebook login succeeded\n');
-                if(done) done(response);
+                if(response.status=="connected" && response.authResponse) {
+                    // check if token permission has email?
+                    //yes->proceed to Drupal fboauth
+                    //no->fail
+                    facebookConnectPlugin.api(
+                        "/me/permissions",
+                        [],
+                        function(result) {
+                            if(result.data.some(function(e) {
+                                return e.status==="granted" &&
+                                    e.permission==="email";
+                                })) {
+                                that.db.setItem("fbtoken", response.authResponse.accessToken);
+                                that.db.setItem("fbuid", response.authResponse.userID);
+                                console.log('Facebook login success');
+                                if(done) done(response);
+                            }else {
+                                console.log('Permissions not granted');
+                                if(fail) fail(result);
+                            }
+                        },
+                        function(err) {
+                            console.log('Error checking granted permissions');
+                            if(fail) fail(err);
+                        }
+                    );
+                }else {
+                    console.log('Facebook disconnected');
+                    if(fail) fail(response);
+                }
             },
             function(error) {
                 console.log('Facebook login failed: '+error);
